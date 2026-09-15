@@ -831,10 +831,10 @@ createButton(movementCard, "Instant Return to Base", Color3.fromRGB(255, 120, 30
 	end
 end)
 
-createButton(movementCard, "Multi-Step (Grounded)", Color3.fromRGB(200, 90, 20), function()
+createButton(movementCard, "Multi-Teleport", Color3.fromRGB(200, 90, 20), function()
 	multiStepToBase()
 end)
-createSlider(movementCard, "Multi-Step Delay (s)", 0.2, 1.2, Settings.MultiStepDelay, function(v)
+createSlider(movementCard, "Multi-Teleport Delay (s)", 0.2, 1.2, Settings.MultiStepDelay, function(v)
 	Settings.MultiStepDelay = v
 end)
 
