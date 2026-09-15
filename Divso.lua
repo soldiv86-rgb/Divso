@@ -1,4 +1,4 @@
--- Divine Soul - Ride a Pet
+-- Divine Soul - Ride a Pet (Clean Redesign)
 
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
@@ -11,40 +11,32 @@ local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
 -------------------------------------------------
--- SETTINGS + SAVE
+-- SETTINGS
 -------------------------------------------------
-local SAVE_FILE = "DivineSoul_RideAPet_Settings.json"
+local SAVE_FILE = "DivineSoul_Settings.json"
 
 local Settings = {
-	TweenDuration = 5.0,
-	MultiStepDelay = 0.45,
+	TweenDuration = 8.0,
+	MultiStepDelay = 0.8,
 	MultiStepSteps = 14,
-	AutoRefreshInterval = 12,
-	NotificationDuration = 2.6,
+	AutoRefreshInterval = 3,
+	NotificationDuration = 2.5,
 	ESPEnabled = true,
 	AutoRefreshEnabled = false,
 	EnabledRarities = {
-		Ethereal = true,
-		Divine = true,
-		Mythic = true,
-		Legendary = true,
-		Epic = true,
-		Rare = true,
-		Uncommon = true,
-		Common = true,
-	},
+		Ethereal = true, Divine = true, Mythic = true, Legendary = true,
+		Epic = true, Rare = true, Common = true
+	}
 }
 
 local function loadSettings()
 	if isfile and readfile and isfile(SAVE_FILE) then
-		local success, data = pcall(function()
+		local ok, data = pcall(function()
 			return HttpService:JSONDecode(readfile(SAVE_FILE))
 		end)
-		if success and type(data) == "table" then
+		if ok and type(data) == "table" then
 			for k, v in pairs(data) do
-				if Settings[k] ~= nil then
-					Settings[k] = v
-				end
+				if Settings[k] ~= nil then Settings[k] = v end
 			end
 		end
 	end
@@ -52,46 +44,39 @@ end
 
 local function saveSettings()
 	if writefile then
-		local success, encoded = pcall(function()
+		local ok, encoded = pcall(function()
 			return HttpService:JSONEncode(Settings)
 		end)
-		if success then
-			pcall(writefile, SAVE_FILE, encoded)
-		end
+		if ok then pcall(writefile, SAVE_FILE, encoded) end
 	end
 end
 
 loadSettings()
 
 -------------------------------------------------
--- RARITY DATA
+-- RARITY DATA (edit this)
 -------------------------------------------------
-local Rarities = {
-	"Ethereal", "Divine", "Mythic", "Legendary",
-	"Epic", "Rare", "Uncommon", "Common"
-}
+local Rarities = {"Ethereal", "Divine", "Mythic", "Legendary", "Epic", "Rare", "Common"}
 
 local RarityColors = {
-	Ethereal  = Color3.fromRGB(180, 80, 255),
-	Divine    = Color3.fromRGB(255, 215, 80),
-	Mythic    = Color3.fromRGB(160, 50, 200),
-	Legendary = Color3.fromRGB(255, 170, 40),
-	Epic      = Color3.fromRGB(170, 60, 200),
+	Ethereal  = Color3.fromRGB(180, 70, 255),
+	Divine    = Color3.fromRGB(255, 210, 70),
+	Mythic    = Color3.fromRGB(170, 50, 210),
+	Legendary = Color3.fromRGB(255, 165, 30),
+	Epic      = Color3.fromRGB(160, 50, 200),
 	Rare      = Color3.fromRGB(50, 120, 255),
-	Uncommon  = Color3.fromRGB(50, 180, 90),
-	Common    = Color3.fromRGB(140, 140, 150),
+	Common    = Color3.fromRGB(150, 150, 160),
 }
 
--- Manually assign eggs here
+-- Put egg names here
 local RarityEggs = {
-	Ethereal = {},
-	Divine = {},
-	Mythic = {},
-	Legendary = {},
+	Ethereal = { "Cherub Egg" },
+	Divine = {"Blackhole Egg", "Galaxy Egg", "Aurora Egg" },
+	Mythic = { "Sinister egg", "Soul Egg" },
+	Legendary = { "Glass Egg", "Golden Egg" },
 	Epic = {},
 	Rare = {},
-	Uncommon = {},
-	Common = {},
+	Common = { "Brown Egg", "White Egg" },
 }
 
 -------------------------------------------------
@@ -100,16 +85,14 @@ local RarityEggs = {
 local isOpen = true
 local currentTab = "Main"
 local currentSearch = ""
-local raritySearch = ""
 local eggButtons = {}
 local espObjects = {}
 local espEnabled = Settings.ESPEnabled
 local autoRefreshEnabled = Settings.AutoRefreshEnabled
 local enabledRarities = Settings.EnabledRarities
-local rarityButtons = {}
 
 -------------------------------------------------
--- Cleanup
+-- CLEANUP
 -------------------------------------------------
 if playerGui:FindFirstChild("DivineSoulUI") then
 	playerGui.DivineSoulUI:Destroy()
@@ -119,7 +102,7 @@ if CoreGui:FindFirstChild("EggSizeESP") then
 end
 
 -------------------------------------------------
--- MAIN UI
+-- UI
 -------------------------------------------------
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "DivineSoulUI"
@@ -127,11 +110,11 @@ screenGui.ResetOnSpawn = false
 screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 screenGui.Parent = playerGui
 
+-- Main Window
 local main = Instance.new("Frame")
-main.Name = "Main"
-main.Size = UDim2.new(0, 700, 0, 520)
-main.Position = UDim2.new(0.5, -350, 0.5, -260)
-main.BackgroundColor3 = Color3.fromRGB(22, 22, 28)
+main.Size = UDim2.new(0, 720, 0, 480)
+main.Position = UDim2.new(0.5, -360, 0.5, -240)
+main.BackgroundColor3 = Color3.fromRGB(20, 20, 26)
 main.BorderSizePixel = 0
 main.Active = true
 main.Parent = screenGui
@@ -141,76 +124,76 @@ mainCorner.CornerRadius = UDim.new(0, 12)
 mainCorner.Parent = main
 
 local mainStroke = Instance.new("UIStroke")
-mainStroke.Color = Color3.fromRGB(45, 45, 60)
+mainStroke.Color = Color3.fromRGB(50, 50, 70)
 mainStroke.Thickness = 1
 mainStroke.Parent = main
 
 -- Header
-local headerBar = Instance.new("Frame")
-headerBar.Size = UDim2.new(1, 0, 0, 44)
-headerBar.BackgroundColor3 = Color3.fromRGB(26, 26, 34)
-headerBar.BorderSizePixel = 0
-headerBar.Parent = main
+local header = Instance.new("Frame")
+header.Size = UDim2.new(1, 0, 0, 52)
+header.BackgroundColor3 = Color3.fromRGB(26, 26, 34)
+header.BorderSizePixel = 0
+header.Parent = main
 
 local headerCorner = Instance.new("UICorner")
 headerCorner.CornerRadius = UDim.new(0, 12)
-headerCorner.Parent = headerBar
+headerCorner.Parent = header
 
 local headerCover = Instance.new("Frame")
-headerCover.Size = UDim2.new(1, 0, 0, 14)
-headerCover.Position = UDim2.new(0, 0, 1, -14)
+headerCover.Size = UDim2.new(1, 0, 0, 16)
+headerCover.Position = UDim2.new(0, 0, 1, -16)
 headerCover.BackgroundColor3 = Color3.fromRGB(26, 26, 34)
 headerCover.BorderSizePixel = 0
-headerCover.Parent = headerBar
+headerCover.Parent = header
 
 local title = Instance.new("TextLabel")
-title.Size = UDim2.new(0, 200, 1, 0)
-title.Position = UDim2.new(0, 16, 0, 0)
+title.Size = UDim2.new(0, 180, 0, 24)
+title.Position = UDim2.new(0, 16, 0, 6)
 title.BackgroundTransparency = 1
 title.Text = "Divine Soul"
 title.TextColor3 = Color3.fromRGB(240, 240, 255)
 title.Font = Enum.Font.GothamBold
-title.TextSize = 16
+title.TextSize = 17
 title.TextXAlignment = Enum.TextXAlignment.Left
-title.Parent = headerBar
+title.Parent = header
 
-local subTitle = Instance.new("TextLabel")
-subTitle.Size = UDim2.new(0, 120, 1, 0)
-subTitle.Position = UDim2.new(0, 130, 0, 0)
-subTitle.BackgroundTransparency = 1
-subTitle.Text = "Ride a Pet"
-subTitle.TextColor3 = Color3.fromRGB(140, 140, 170)
-subTitle.Font = Enum.Font.Gotham
-subTitle.TextSize = 13
-subTitle.TextXAlignment = Enum.TextXAlignment.Left
-subTitle.Parent = headerBar
+local subtitle = Instance.new("TextLabel")
+subtitle.Size = UDim2.new(0, 120, 0, 16)
+subtitle.Position = UDim2.new(0, 16, 0, 28)
+subtitle.BackgroundTransparency = 1
+subtitle.Text = "Ride a Pet"
+subtitle.TextColor3 = Color3.fromRGB(140, 140, 170)
+subtitle.Font = Enum.Font.Gotham
+subtitle.TextSize = 12
+subtitle.TextXAlignment = Enum.TextXAlignment.Left
+subtitle.Parent = header
 
--- Tabs
+-- Tabs (under title)
 local tabMain = Instance.new("TextButton")
-tabMain.Size = UDim2.new(0, 90, 0, 28)
-tabMain.Position = UDim2.new(0, 280, 0.5, -14)
-tabMain.BackgroundColor3 = Color3.fromRGB(50, 90, 160)
+tabMain.Size = UDim2.new(0, 90, 0, 26)
+tabMain.Position = UDim2.new(0, 200, 0, 14)
+tabMain.BackgroundColor3 = Color3.fromRGB(55, 100, 180)
 tabMain.Text = "Main"
 tabMain.TextColor3 = Color3.fromRGB(255, 255, 255)
 tabMain.Font = Enum.Font.GothamMedium
 tabMain.TextSize = 13
 tabMain.AutoButtonColor = false
-tabMain.Parent = headerBar
+tabMain.Parent = header
 
 local tabMainCorner = Instance.new("UICorner")
 tabMainCorner.CornerRadius = UDim.new(0, 7)
 tabMainCorner.Parent = tabMain
 
 local tabHop = Instance.new("TextButton")
-tabHop.Size = UDim2.new(0, 100, 0, 28)
-tabHop.Position = UDim2.new(0, 380, 0.5, -14)
+tabHop.Size = UDim2.new(0, 100, 0, 26)
+tabHop.Position = UDim2.new(0, 300, 0, 14)
 tabHop.BackgroundColor3 = Color3.fromRGB(40, 40, 55)
 tabHop.Text = "Server Hop"
 tabHop.TextColor3 = Color3.fromRGB(200, 200, 220)
 tabHop.Font = Enum.Font.GothamMedium
 tabHop.TextSize = 13
 tabHop.AutoButtonColor = false
-tabHop.Parent = headerBar
+tabHop.Parent = header
 
 local tabHopCorner = Instance.new("UICorner")
 tabHopCorner.CornerRadius = UDim.new(0, 7)
@@ -218,15 +201,15 @@ tabHopCorner.Parent = tabHop
 
 -- Close
 local closeBtn = Instance.new("TextButton")
-closeBtn.Size = UDim2.new(0, 32, 0, 28)
-closeBtn.Position = UDim2.new(1, -42, 0.5, -14)
-closeBtn.BackgroundColor3 = Color3.fromRGB(50, 30, 35)
+closeBtn.Size = UDim2.new(0, 30, 0, 26)
+closeBtn.Position = UDim2.new(1, -40, 0, 13)
+closeBtn.BackgroundColor3 = Color3.fromRGB(55, 30, 35)
 closeBtn.Text = "×"
 closeBtn.TextColor3 = Color3.fromRGB(255, 180, 180)
 closeBtn.Font = Enum.Font.GothamBold
-closeBtn.TextSize = 18
+closeBtn.TextSize = 17
 closeBtn.AutoButtonColor = false
-closeBtn.Parent = headerBar
+closeBtn.Parent = header
 
 local closeCorner = Instance.new("UICorner")
 closeCorner.CornerRadius = UDim.new(0, 7)
@@ -234,8 +217,8 @@ closeCorner.Parent = closeBtn
 
 -- Floating DS button
 local openBtn = Instance.new("TextButton")
-openBtn.Size = UDim2.new(0, 48, 0, 48)
-openBtn.Position = UDim2.new(0, 40, 0, 100)
+openBtn.Size = UDim2.new(0, 46, 0, 46)
+openBtn.Position = UDim2.new(0, 30, 0, 100)
 openBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 45)
 openBtn.Text = "DS"
 openBtn.TextColor3 = Color3.fromRGB(220, 220, 255)
@@ -247,7 +230,7 @@ openBtn.Active = true
 openBtn.Parent = screenGui
 
 local openCorner = Instance.new("UICorner")
-openCorner.CornerRadius = UDim.new(0, 12)
+openCorner.CornerRadius = UDim.new(0, 11)
 openCorner.Parent = openBtn
 
 local openStroke = Instance.new("UIStroke")
@@ -257,20 +240,20 @@ openStroke.Parent = openBtn
 
 -- Notification
 local notif = Instance.new("Frame")
-notif.Size = UDim2.new(0, 260, 0, 34)
-notif.Position = UDim2.new(0.5, -130, 0, 18)
-notif.BackgroundColor3 = Color3.fromRGB(28, 28, 40)
+notif.Size = UDim2.new(0, 250, 0, 32)
+notif.Position = UDim2.new(0.5, -125, 0, 16)
+notif.BackgroundColor3 = Color3.fromRGB(30, 30, 42)
 notif.BorderSizePixel = 0
 notif.Visible = false
 notif.Parent = screenGui
 
 local notifCorner = Instance.new("UICorner")
-notifCorner.CornerRadius = UDim.new(0, 9)
+notifCorner.CornerRadius = UDim.new(0, 8)
 notifCorner.Parent = notif
 
 local notifText = Instance.new("TextLabel")
-notifText.Size = UDim2.new(1, -12, 1, 0)
-notifText.Position = UDim2.new(0, 6, 0, 0)
+notifText.Size = UDim2.new(1, -10, 1, 0)
+notifText.Position = UDim2.new(0, 5, 0, 0)
 notifText.BackgroundTransparency = 1
 notifText.TextColor3 = Color3.fromRGB(230, 230, 255)
 notifText.Font = Enum.Font.GothamMedium
@@ -279,128 +262,131 @@ notifText.TextXAlignment = Enum.TextXAlignment.Center
 notifText.Parent = notif
 
 -------------------------------------------------
--- Content Areas
+-- CONTENT
 -------------------------------------------------
-local mainContent = Instance.new("Frame")
-mainContent.Name = "MainContent"
-mainContent.Size = UDim2.new(1, -20, 1, -60)
-mainContent.Position = UDim2.new(0, 10, 0, 52)
-mainContent.BackgroundTransparency = 1
-mainContent.Parent = main
+local content = Instance.new("Frame")
+content.Size = UDim2.new(1, -20, 1, -68)
+content.Position = UDim2.new(0, 10, 0, 58)
+content.BackgroundTransparency = 1
+content.Parent = main
 
-local hopContent = Instance.new("Frame")
-hopContent.Name = "HopContent"
-hopContent.Size = UDim2.new(1, -20, 1, -60)
-hopContent.Position = UDim2.new(0, 10, 0, 52)
-hopContent.BackgroundTransparency = 1
-hopContent.Visible = false
-hopContent.Parent = main
-
--------------------------------------------------
--- LEFT SIDE (Controls)
--------------------------------------------------
-local leftPanel = Instance.new("ScrollingFrame")
-leftPanel.Size = UDim2.new(0.38, 0, 1, 0)
-leftPanel.BackgroundTransparency = 1
-leftPanel.BorderSizePixel = 0
-leftPanel.ScrollBarThickness = 3
-leftPanel.AutomaticCanvasSize = Enum.AutomaticSize.Y
-leftPanel.Parent = mainContent
+-- Left Panel (Controls)
+local left = Instance.new("ScrollingFrame")
+left.Size = UDim2.new(0.36, 0, 1, 0)
+left.BackgroundTransparency = 1
+left.BorderSizePixel = 0
+left.ScrollBarThickness = 3
+left.AutomaticCanvasSize = Enum.AutomaticSize.Y
+left.Parent = content
 
 local leftList = Instance.new("UIListLayout")
 leftList.Padding = UDim.new(0, 8)
-leftList.Parent = leftPanel
+leftList.Parent = left
 
--------------------------------------------------
--- MIDDLE (Rarity Filter)
--------------------------------------------------
-local middlePanel = Instance.new("Frame")
-middlePanel.Size = UDim2.new(0.28, 0, 1, 0)
-middlePanel.Position = UDim2.new(0.40, 0, 0, 0)
-middlePanel.BackgroundColor3 = Color3.fromRGB(26, 26, 34)
-middlePanel.BorderSizePixel = 0
-middlePanel.Parent = mainContent
+-- Right Panel (Eggs + Rarity)
+local right = Instance.new("Frame")
+right.Size = UDim2.new(0.62, 0, 1, 0)
+right.Position = UDim2.new(0.38, 0, 0, 0)
+right.BackgroundTransparency = 1
+right.Parent = content
 
-local midCorner = Instance.new("UICorner")
-midCorner.CornerRadius = UDim.new(0, 10)
-midCorner.Parent = middlePanel
+-- Rarity Section
+local rarityFrame = Instance.new("Frame")
+rarityFrame.Size = UDim2.new(1, 0, 0, 160)
+rarityFrame.BackgroundColor3 = Color3.fromRGB(26, 26, 34)
+rarityFrame.BorderSizePixel = 0
+rarityFrame.Parent = right
+
+local rarityCorner = Instance.new("UICorner")
+rarityCorner.CornerRadius = UDim.new(0, 10)
+rarityCorner.Parent = rarityFrame
 
 local rarityTitle = Instance.new("TextLabel")
-rarityTitle.Size = UDim2.new(1, -16, 0, 28)
-rarityTitle.Position = UDim2.new(0, 8, 0, 6)
+rarityTitle.Size = UDim2.new(1, -16, 0, 24)
+rarityTitle.Position = UDim2.new(0, 10, 0, 6)
 rarityTitle.BackgroundTransparency = 1
 rarityTitle.Text = "Rarities"
 rarityTitle.TextColor3 = Color3.fromRGB(200, 200, 230)
 rarityTitle.Font = Enum.Font.GothamMedium
 rarityTitle.TextSize = 14
 rarityTitle.TextXAlignment = Enum.TextXAlignment.Left
-rarityTitle.Parent = middlePanel
+rarityTitle.Parent = rarityFrame
 
-local raritySearchBox = Instance.new("TextBox")
-raritySearchBox.Size = UDim2.new(1, -16, 0, 28)
-raritySearchBox.Position = UDim2.new(0, 8, 0, 36)
-raritySearchBox.BackgroundColor3 = Color3.fromRGB(35, 35, 48)
-raritySearchBox.Text = ""
-raritySearchBox.PlaceholderText = "Search..."
-raritySearchBox.TextColor3 = Color3.fromRGB(240, 240, 255)
-raritySearchBox.PlaceholderColor3 = Color3.fromRGB(120, 120, 150)
-raritySearchBox.Font = Enum.Font.Gotham
-raritySearchBox.TextSize = 13
-raritySearchBox.ClearTextOnFocus = false
-raritySearchBox.Parent = middlePanel
+local rarityScroll = Instance.new("ScrollingFrame")
+rarityScroll.Size = UDim2.new(1, -12, 1, -36)
+rarityScroll.Position = UDim2.new(0, 6, 0, 32)
+rarityScroll.BackgroundTransparency = 1
+rarityScroll.BorderSizePixel = 0
+rarityScroll.ScrollBarThickness = 3
+rarityScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+rarityScroll.Parent = rarityFrame
 
-local rsCorner = Instance.new("UICorner")
-rsCorner.CornerRadius = UDim.new(0, 7)
-rsCorner.Parent = raritySearchBox
+local rarityList = Instance.new("UIListLayout")
+rarityList.Padding = UDim.new(0, 4)
+rarityList.Parent = rarityScroll
 
-local rarityList = Instance.new("ScrollingFrame")
-rarityList.Size = UDim2.new(1, -12, 1, -76)
-rarityList.Position = UDim2.new(0, 6, 0, 72)
-rarityList.BackgroundTransparency = 1
-rarityList.BorderSizePixel = 0
-rarityList.ScrollBarThickness = 3
-rarityList.AutomaticCanvasSize = Enum.AutomaticSize.Y
-rarityList.Parent = middlePanel
-
-local rarityLayout = Instance.new("UIListLayout")
-rarityLayout.Padding = UDim.new(0, 4)
-rarityLayout.Parent = rarityList
-
--------------------------------------------------
--- RIGHT SIDE (Eggs)
--------------------------------------------------
-local rightPanel = Instance.new("ScrollingFrame")
-rightPanel.Size = UDim2.new(0.30, 0, 1, -40)
-rightPanel.Position = UDim2.new(0.70, 0, 0, 40)
-rightPanel.BackgroundTransparency = 1
-rightPanel.BorderSizePixel = 0
-rightPanel.ScrollBarThickness = 3
-rightPanel.AutomaticCanvasSize = Enum.AutomaticSize.Y
-rightPanel.Parent = mainContent
-
-local rightList = Instance.new("UIListLayout")
-rightList.Padding = UDim.new(0, 6)
-rightList.Parent = rightPanel
-
+-- Eggs Section
 local eggSearch = Instance.new("TextBox")
-eggSearch.Size = UDim2.new(0.30, 0, 0, 32)
-eggSearch.Position = UDim2.new(0.70, 0, 0, 0)
+eggSearch.Size = UDim2.new(1, 0, 0, 32)
+eggSearch.Position = UDim2.new(0, 0, 0, 170)
 eggSearch.BackgroundColor3 = Color3.fromRGB(32, 32, 42)
-eggSearch.Text = ""
 eggSearch.PlaceholderText = "Search eggs..."
+eggSearch.Text = ""
 eggSearch.TextColor3 = Color3.fromRGB(240, 240, 255)
 eggSearch.PlaceholderColor3 = Color3.fromRGB(120, 120, 150)
 eggSearch.Font = Enum.Font.Gotham
 eggSearch.TextSize = 13
 eggSearch.ClearTextOnFocus = false
-eggSearch.Parent = mainContent
+eggSearch.Parent = right
 
 local esCorner = Instance.new("UICorner")
 esCorner.CornerRadius = UDim.new(0, 8)
 esCorner.Parent = eggSearch
 
+local eggScroll = Instance.new("ScrollingFrame")
+eggScroll.Size = UDim2.new(1, 0, 1, -212)
+eggScroll.Position = UDim2.new(0, 0, 0, 210)
+eggScroll.BackgroundTransparency = 1
+eggScroll.BorderSizePixel = 0
+eggScroll.ScrollBarThickness = 3
+eggScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+eggScroll.Parent = right
+
+local eggList = Instance.new("UIListLayout")
+eggList.Padding = UDim.new(0, 6)
+eggList.Parent = eggScroll
+
 -------------------------------------------------
--- Helpers
+-- HOP TAB CONTENT
+-------------------------------------------------
+local hopContent = Instance.new("Frame")
+hopContent.Size = UDim2.new(1, -20, 1, -68)
+hopContent.Position = UDim2.new(0, 10, 0, 58)
+hopContent.BackgroundTransparency = 1
+hopContent.Visible = false
+hopContent.Parent = main
+
+local hopTitle = Instance.new("TextLabel")
+hopTitle.Size = UDim2.new(1, 0, 0, 30)
+hopTitle.BackgroundTransparency = 1
+hopTitle.Text = "Server Hop"
+hopTitle.TextColor3 = Color3.fromRGB(240, 240, 255)
+hopTitle.Font = Enum.Font.GothamBold
+hopTitle.TextSize = 18
+hopTitle.Parent = hopContent
+
+local hopDesc = Instance.new("TextLabel")
+hopDesc.Size = UDim2.new(1, 0, 0, 40)
+hopDesc.Position = UDim2.new(0, 0, 0, 35)
+hopDesc.BackgroundTransparency = 1
+hopDesc.Text = "Teleport to a different server of this place."
+hopDesc.TextColor3 = Color3.fromRGB(160, 160, 180)
+hopDesc.Font = Enum.Font.Gotham
+hopDesc.TextSize = 14
+hopDesc.Parent = hopContent
+
+-------------------------------------------------
+-- HELPERS
 -------------------------------------------------
 local function notify(msg)
 	notifText.Text = msg
@@ -408,18 +394,16 @@ local function notify(msg)
 	notif.BackgroundTransparency = 0
 	notifText.TextTransparency = 0
 	task.delay(Settings.NotificationDuration, function()
-		local t1 = TweenService:Create(notif, TweenInfo.new(0.35), {BackgroundTransparency = 1})
-		local t2 = TweenService:Create(notifText, TweenInfo.new(0.35), {TextTransparency = 1})
-		t1:Play()
-		t2:Play()
-		t1.Completed:Wait()
+		TweenService:Create(notif, TweenInfo.new(0.3), {BackgroundTransparency = 1}):Play()
+		TweenService:Create(notifText, TweenInfo.new(0.3), {TextTransparency = 1}):Play()
+		task.wait(0.3)
 		notif.Visible = false
 	end)
 end
 
 local function createSection(parent, text)
 	local l = Instance.new("TextLabel")
-	l.Size = UDim2.new(1, 0, 0, 20)
+	l.Size = UDim2.new(1, 0, 0, 18)
 	l.BackgroundTransparency = 1
 	l.Text = text
 	l.TextColor3 = Color3.fromRGB(140, 140, 170)
@@ -620,7 +604,7 @@ local function createToggle(parent, text, default, callback)
 end
 
 -------------------------------------------------
--- Teleport helpers
+-- TELEPORT
 -------------------------------------------------
 local function getBase()
 	local plots = workspace:FindFirstChild("Plots")
@@ -676,28 +660,17 @@ local function multiStepToBase()
 end
 
 -------------------------------------------------
--- Eggs
+-- EGGS
 -------------------------------------------------
-local function clearEggButtons()
+local function clearEggs()
 	for btn in pairs(eggButtons) do
 		btn:Destroy()
 	end
 	eggButtons = {}
 end
 
-local function getEggRarity(eggName)
-	for rarity, list in pairs(RarityEggs) do
-		for _, name in ipairs(list) do
-			if name == eggName then
-				return rarity
-			end
-		end
-	end
-	return "Common"
-end
-
 local function refreshEggs()
-	clearEggButtons()
+	clearEggs()
 	local rendered = workspace:FindFirstChild("RenderedEggs")
 	if not rendered then
 		notify("No RenderedEggs found")
@@ -706,8 +679,8 @@ local function refreshEggs()
 
 	local allowed = {}
 	for rarity, on in pairs(enabledRarities) do
-		if on and RarityEggs[rarity] then
-			for _, name in ipairs(RarityEggs[rarity]) do
+		if on then
+			for _, name in ipairs(RarityEggs[rarity] or {}) do
 				allowed[name] = rarity
 			end
 		end
@@ -719,12 +692,12 @@ local function refreshEggs()
 		if rarity then
 			if currentSearch == "" or egg.Name:lower():find(currentSearch:lower(), 1, true) then
 				count += 1
-				local color = RarityColors[rarity] or Color3.fromRGB(36, 36, 48)
-				local btn = createButton(rightPanel, egg.Name, color, function()
+				local color = RarityColors[rarity] or Color3.fromRGB(40, 40, 55)
+				local btn = createButton(eggScroll, egg.Name, color, function()
 					teleportTo(egg)
 					notify("Teleported to " .. egg.Name)
 				end)
-				eggButtons[btn] = egg.Name
+				eggButtons[btn] = true
 			end
 		end
 	end
@@ -737,69 +710,172 @@ eggSearch:GetPropertyChangedSignal("Text"):Connect(function()
 end)
 
 -------------------------------------------------
--- Rarity Multi-Select (styled like the video)
+-- RARITY BUTTONS
 -------------------------------------------------
-local function updateRarityList()
-	for _, child in ipairs(rarityList:GetChildren()) do
-		if child:IsA("TextButton") then
-			child:Destroy()
-		end
+local function updateRarityButtons()
+	for _, child in ipairs(rarityScroll:GetChildren()) do
+		if child:IsA("TextButton") then child:Destroy() end
 	end
 
 	for _, rarity in ipairs(Rarities) do
-		if raritySearch == "" or rarity:lower():find(raritySearch:lower(), 1, true) then
-			local btn = Instance.new("TextButton")
-			btn.Size = UDim2.new(1, 0, 0, 28)
-			btn.BackgroundColor3 = Color3.fromRGB(32, 32, 42)
-			btn.Text = ""
-			btn.AutoButtonColor = false
-			btn.Parent = rarityList
+		local btn = Instance.new("TextButton")
+		btn.Size = UDim2.new(1, 0, 0, 28)
+		btn.BackgroundColor3 = Color3.fromRGB(32, 32, 42)
+		btn.Text = ""
+		btn.AutoButtonColor = false
+		btn.Parent = rarityScroll
 
-			local c = Instance.new("UICorner")
-			c.CornerRadius = UDim.new(0, 6)
-			c.Parent = btn
+		local c = Instance.new("UICorner")
+		c.CornerRadius = UDim.new(0, 6)
+		c.Parent = btn
 
-			-- Orange selection bar
-			local bar = Instance.new("Frame")
-			bar.Size = UDim2.new(0, 4, 1, -8)
-			bar.Position = UDim2.new(0, 4, 0, 4)
-			bar.BackgroundColor3 = Color3.fromRGB(255, 140, 40)
-			bar.BorderSizePixel = 0
-			bar.Visible = enabledRarities[rarity] == true
-			bar.Parent = btn
+		local bar = Instance.new("Frame")
+		bar.Size = UDim2.new(0, 4, 1, -8)
+		bar.Position = UDim2.new(0, 4, 0, 4)
+		bar.BackgroundColor3 = Color3.fromRGB(255, 140, 40)
+		bar.BorderSizePixel = 0
+		bar.Visible = enabledRarities[rarity] == true
+		bar.Parent = btn
 
-			local bc = Instance.new("UICorner")
-			bc.CornerRadius = UDim.new(0, 2)
-			bc.Parent = bar
+		local bc = Instance.new("UICorner")
+		bc.CornerRadius = UDim.new(0, 2)
+		bc.Parent = bar
 
-			local label = Instance.new("TextLabel")
-			label.Size = UDim2.new(1, -20, 1, 0)
-			label.Position = UDim2.new(0, 16, 0, 0)
-			label.BackgroundTransparency = 1
-			label.Text = rarity
-			label.TextColor3 = Color3.fromRGB(230, 230, 255)
-			label.Font = Enum.Font.Gotham
-			label.TextSize = 13
-			label.TextXAlignment = Enum.TextXAlignment.Left
-			label.Parent = btn
+		local label = Instance.new("TextLabel")
+		label.Size = UDim2.new(1, -20, 1, 0)
+		label.Position = UDim2.new(0, 16, 0, 0)
+		label.BackgroundTransparency = 1
+		label.Text = rarity
+		label.TextColor3 = Color3.fromRGB(230, 230, 255)
+		label.Font = Enum.Font.Gotham
+		label.TextSize = 13
+		label.TextXAlignment = Enum.TextXAlignment.Left
+		label.Parent = btn
 
-			btn.MouseButton1Click:Connect(function()
-				enabledRarities[rarity] = not enabledRarities[rarity]
-				Settings.EnabledRarities = enabledRarities
-				bar.Visible = enabledRarities[rarity]
-				refreshEggs()
-				saveSettings()
-			end)
-		end
+		btn.MouseButton1Click:Connect(function()
+			enabledRarities[rarity] = not enabledRarities[rarity]
+			Settings.EnabledRarities = enabledRarities
+			bar.Visible = enabledRarities[rarity]
+			refreshEggs()
+			saveSettings()
+		end)
 	end
 end
 
-raritySearchBox:GetPropertyChangedSignal("Text"):Connect(function()
-	raritySearch = raritySearchBox.Text
-	updateRarityList()
+updateRarityButtons()
+
+-------------------------------------------------
+-- CONTROLS
+-------------------------------------------------
+createSection(left, "MOVEMENT")
+createSlider(left, "Tween Speed (s)", 2, 12, Settings.TweenDuration, function(v) Settings.TweenDuration = v end)
+createSlider(left, "Multi-Step Delay (s)", 0.2, 1.2, Settings.MultiStepDelay, function(v) Settings.MultiStepDelay = v end)
+
+createButton(left, "Instant Return to Base", Color3.fromRGB(30, 100, 70), function()
+	local base = getBase()
+	if base then teleportTo(base) notify("Returned to base") else notify("Base not found") end
+end)
+createButton(left, "Smooth Tween to Base", Color3.fromRGB(40, 85, 150), function() tweenToBase() end)
+createButton(left, "Multi-Step (Grounded)", Color3.fromRGB(90, 55, 140), function() multiStepToBase() end)
+
+createSection(left, "OPTIONS")
+createToggle(left, "ESP", Settings.ESPEnabled, function(state)
+	espEnabled = state
+	Settings.ESPEnabled = state
+	notify(state and "ESP enabled" or "ESP disabled")
+end)
+createToggle(left, "Auto Refresh", Settings.AutoRefreshEnabled, function(state)
+	autoRefreshEnabled = state
+	Settings.AutoRefreshEnabled = state
+	notify(state and "Auto refresh enabled" or "Auto refresh disabled")
 end)
 
-updateRarityList()
+createButton(eggScroll, "Refresh Eggs", Color3.fromRGB(45, 45, 70), function()
+	refreshEggs()
+end)
+
+-- Server Hop button
+createButton(hopContent, "Server Hop Now", Color3.fromRGB(90, 50, 160), function()
+	notify("Server hopping...")
+	TeleportService:Teleport(game.PlaceId, player)
+end).Position = UDim2.new(0, 0, 0, 90)
+
+-------------------------------------------------
+-- TABS
+-------------------------------------------------
+local function setTab(name)
+	currentTab = name
+	content.Visible = name == "Main"
+	hopContent.Visible = name == "Hop"
+	tabMain.BackgroundColor3 = name == "Main" and Color3.fromRGB(55, 100, 180) or Color3.fromRGB(40, 40, 55)
+	tabHop.BackgroundColor3 = name == "Hop" and Color3.fromRGB(55, 100, 180) or Color3.fromRGB(40, 40, 55)
+end
+
+tabMain.MouseButton1Click:Connect(function() setTab("Main") end)
+tabHop.MouseButton1Click:Connect(function() setTab("Hop") end)
+
+-------------------------------------------------
+-- CLOSE / OPEN
+-------------------------------------------------
+closeBtn.MouseButton1Click:Connect(function()
+	main.Visible = false
+	isOpen = false
+	saveSettings()
+	notify("UI closed")
+end)
+
+-- Open button
+local openDragging, openDragStart, openStartPos, openMoved = false, nil, nil, false
+
+openBtn.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+		openDragging = true
+		openMoved = false
+		openDragStart = input.Position
+		openStartPos = openBtn.Position
+	end
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+	if openDragging and (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) then
+		openDragging = false
+		if not openMoved then
+			isOpen = not isOpen
+			main.Visible = isOpen
+			notify(isOpen and "UI opened" or "UI closed")
+			if not isOpen then saveSettings() end
+		end
+	end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+	if openDragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+		local delta = input.Position - openDragStart
+		if math.abs(delta.X) > 5 or math.abs(delta.Y) > 5 then openMoved = true end
+		openBtn.Position = UDim2.new(openStartPos.X.Scale, openStartPos.X.Offset + delta.X, openStartPos.Y.Scale, openStartPos.Y.Offset + delta.Y)
+	end
+end)
+
+-- Window drag
+local dragging, dragStart, startPos = false, nil, nil
+header.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+		dragging = true
+		dragStart = input.Position
+		startPos = main.Position
+	end
+end)
+header.InputEnded:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+		dragging = false
+	end
+end)
+UserInputService.InputChanged:Connect(function(input)
+	if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+		local delta = input.Position - dragStart
+		main.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+	end
+end)
 
 -------------------------------------------------
 -- ESP
@@ -846,16 +922,15 @@ local function createESP(egg)
 	espObjects[id] = bb
 end
 
-local function clearAllESP()
-	for _, gui in pairs(espObjects) do gui:Destroy() end
-	espObjects = {}
-end
-
 task.spawn(function()
 	while task.wait(0.7) do
-		if not espEnabled then clearAllESP() continue end
+		if not espEnabled then
+			for _, g in pairs(espObjects) do g:Destroy() end
+			espObjects = {}
+			continue
+		end
 		local folder = workspace:FindFirstChild("RenderedEggs")
-		if not folder then clearAllESP() continue end
+		if not folder then continue end
 		local alive = {}
 		for _, egg in ipairs(folder:GetChildren()) do
 			local id = tostring(egg:GetDebugId())
@@ -872,141 +947,7 @@ task.spawn(function()
 end)
 
 -------------------------------------------------
--- Controls
--------------------------------------------------
-createSection(leftPanel, "MOVEMENT")
-createSlider(leftPanel, "Tween Speed (s)", 2, 12, Settings.TweenDuration, function(v) Settings.TweenDuration = v end)
-createSlider(leftPanel, "Multi-Step Delay (s)", 0.2, 1.2, Settings.MultiStepDelay, function(v) Settings.MultiStepDelay = v end)
-
-createButton(leftPanel, "Instant Return to Base", Color3.fromRGB(30, 100, 70), function()
-	local base = getBase()
-	if base then teleportTo(base) notify("Returned to base") else notify("Base not found") end
-end)
-createButton(leftPanel, "Smooth Tween to Base", Color3.fromRGB(40, 85, 150), function() tweenToBase() end)
-createButton(leftPanel, "Multi-Step (Grounded)", Color3.fromRGB(90, 55, 140), function() multiStepToBase() end)
-
-createSection(leftPanel, "OPTIONS")
-createToggle(leftPanel, "ESP", Settings.ESPEnabled, function(state)
-	espEnabled = state
-	Settings.ESPEnabled = state
-	if not state then clearAllESP() end
-	notify(state and "ESP enabled" or "ESP disabled")
-end)
-createToggle(leftPanel, "Auto Refresh", Settings.AutoRefreshEnabled, function(state)
-	autoRefreshEnabled = state
-	Settings.AutoRefreshEnabled = state
-	notify(state and "Auto refresh enabled" or "Auto refresh disabled")
-end)
-
-createButton(rightPanel, "Refresh Eggs", Color3.fromRGB(45, 45, 70), function() refreshEggs() end)
-
--------------------------------------------------
--- Server Hop Tab
--------------------------------------------------
-local hopTitle = Instance.new("TextLabel")
-hopTitle.Size = UDim2.new(1, 0, 0, 30)
-hopTitle.BackgroundTransparency = 1
-hopTitle.Text = "Server Hop"
-hopTitle.TextColor3 = Color3.fromRGB(230, 230, 255)
-hopTitle.Font = Enum.Font.GothamBold
-hopTitle.TextSize = 18
-hopTitle.Parent = hopContent
-
-local hopDesc = Instance.new("TextLabel")
-hopDesc.Size = UDim2.new(1, 0, 0, 40)
-hopDesc.Position = UDim2.new(0, 0, 0, 35)
-hopDesc.BackgroundTransparency = 1
-hopDesc.Text = "Teleport to a different server of the same place."
-hopDesc.TextColor3 = Color3.fromRGB(160, 160, 180)
-hopDesc.Font = Enum.Font.Gotham
-hopDesc.TextSize = 14
-hopDesc.TextWrapped = true
-hopDesc.Parent = hopContent
-
-createButton(hopContent, "Server Hop Now", Color3.fromRGB(80, 50, 160), function()
-	notify("Server hopping...")
-	TeleportService:Teleport(game.PlaceId, player)
-end).Position = UDim2.new(0, 0, 0, 90)
-
--------------------------------------------------
--- Tabs switching
--------------------------------------------------
-local function setTab(tab)
-	currentTab = tab
-	mainContent.Visible = tab == "Main"
-	hopContent.Visible = tab == "Hop"
-	tabMain.BackgroundColor3 = tab == "Main" and Color3.fromRGB(50, 90, 160) or Color3.fromRGB(40, 40, 55)
-	tabHop.BackgroundColor3 = tab == "Hop" and Color3.fromRGB(50, 90, 160) or Color3.fromRGB(40, 40, 55)
-end
-
-tabMain.MouseButton1Click:Connect(function() setTab("Main") end)
-tabHop.MouseButton1Click:Connect(function() setTab("Hop") end)
-
--------------------------------------------------
--- Close / Open
--------------------------------------------------
-closeBtn.MouseButton1Click:Connect(function()
-	main.Visible = false
-	isOpen = false
-	saveSettings()
-	notify("UI closed")
-end)
-
--- Open button drag + toggle
-local openDragging, openDragStart, openStartPos, openMoved = false, nil, nil, false
-
-openBtn.InputBegan:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-		openDragging = true
-		openMoved = false
-		openDragStart = input.Position
-		openStartPos = openBtn.Position
-	end
-end)
-
-UserInputService.InputEnded:Connect(function(input)
-	if openDragging and (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) then
-		openDragging = false
-		if not openMoved then
-			isOpen = not isOpen
-			main.Visible = isOpen
-			notify(isOpen and "UI opened" or "UI closed")
-			if not isOpen then saveSettings() end
-		end
-	end
-end)
-
-UserInputService.InputChanged:Connect(function(input)
-	if openDragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-		local delta = input.Position - openDragStart
-		if math.abs(delta.X) > 5 or math.abs(delta.Y) > 5 then openMoved = true end
-		openBtn.Position = UDim2.new(openStartPos.X.Scale, openStartPos.X.Offset + delta.X, openStartPos.Y.Scale, openStartPos.Y.Offset + delta.Y)
-	end
-end)
-
--- Main window drag
-local dragging, dragStart, startPos = false, nil, nil
-headerBar.InputBegan:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-		dragging = true
-		dragStart = input.Position
-		startPos = main.Position
-	end
-end)
-headerBar.InputEnded:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-		dragging = false
-	end
-end)
-UserInputService.InputChanged:Connect(function(input)
-	if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-		local delta = input.Position - dragStart
-		main.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-	end
-end)
-
--------------------------------------------------
--- Auto Refresh
+-- AUTO REFRESH
 -------------------------------------------------
 task.spawn(function()
 	while task.wait(Settings.AutoRefreshInterval) do
@@ -1016,10 +957,6 @@ task.spawn(function()
 	end
 end)
 
-player.AncestryChanged:Connect(function()
-	if not player.Parent then saveSettings() end
-end)
-
 refreshEggs()
 notify("Divine Soul loaded")
-print("Divine Soul - Ride a Pet loaded")
+print("Divine Soul - Clean UI loaded")
