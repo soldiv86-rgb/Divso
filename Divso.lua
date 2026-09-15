@@ -651,7 +651,7 @@ local playerFrame = Instance.new("Frame")
 playerFrame.Size = UDim2.new(1, 0, 0, 140)
 playerFrame.BackgroundColor3 = Color3.fromRGB(28, 28, 38)
 playerFrame.BorderSizePixel = 0
-playerFrame.Parent = left
+-- Note: Parent will be set later under OPTIONS
 local playerCorner = Instance.new("UICorner")
 playerCorner.CornerRadius = UDim.new(0, 8)
 playerCorner.Parent = playerFrame
@@ -843,9 +843,11 @@ local function updateRarityButtons()
 end
 updateRarityButtons()
 -------------------------------------------------
--- CONTROLS
+-- CONTROLS (Reordered)
 -------------------------------------------------
 createSection(left, "MOVEMENT")
+
+-- 1. Instant Return to Base
 createButton(left, "Instant Return to Base", Color3.fromRGB(30, 100, 70), function()
 	local base = getBase() -- always your own base
 	if base then
@@ -855,31 +857,42 @@ createButton(left, "Instant Return to Base", Color3.fromRGB(30, 100, 70), functi
 		notify("Your base not found")
 	end
 end)
--- Player selector
-playerFrame.Parent = left
-createButton(left, "Smooth Tween to Base", Color3.fromRGB(40, 85, 150), function()
-	tweenToBase()
-end)
-createSlider(left, "Tween Speed (s)", 2, 12, Settings.TweenDuration, function(v)
-	Settings.TweenDuration = v
-end)
+
+-- 2. Multi-Step (Grounded) + its slider
 createButton(left, "Multi-Step (Grounded)", Color3.fromRGB(90, 55, 140), function()
 	multiStepToBase()
 end)
 createSlider(left, "Multi-Step Delay (s)", 0.2, 1.2, Settings.MultiStepDelay, function(v)
 	Settings.MultiStepDelay = v
 end)
-createSection(left, "OPTIONS")
-createToggle(left, "ESP", Settings.ESPEnabled, function(state)
-	espEnabled = state
-	Settings.ESPEnabled = state
-	notify(state and "ESP enabled" or "ESP disabled")
+
+-- 3. Smooth Tween to Base + its slider
+createButton(left, "Smooth Tween to Base", Color3.fromRGB(40, 85, 150), function()
+	tweenToBase()
 end)
+createSlider(left, "Tween Speed (s)", 2, 12, Settings.TweenDuration, function(v)
+	Settings.TweenDuration = v
+end)
+
+createSection(left, "OPTIONS")
+
+-- 1. Selected Player
+playerFrame.Parent = left
+
+-- 2. Auto Refresh
 createToggle(left, "Auto Refresh", Settings.AutoRefreshEnabled, function(state)
 	autoRefreshEnabled = state
 	Settings.AutoRefreshEnabled = state
 	notify(state and "Auto refresh enabled" or "Auto refresh disabled")
 end)
+
+-- 3. Egg ESP
+createToggle(left, "Egg ESP", Settings.ESPEnabled, function(state)
+	espEnabled = state
+	Settings.ESPEnabled = state
+	notify(state and "ESP enabled" or "ESP disabled")
+end)
+
 createButton(eggScroll, "Refresh Eggs", Color3.fromRGB(45, 45, 70), function()
 	refreshEggs()
 end)
