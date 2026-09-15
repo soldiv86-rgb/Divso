@@ -22,6 +22,16 @@ local Settings = {
 	NotificationDuration = 2.6,
 	ESPEnabled = true,
 	AutoRefreshEnabled = false,
+	EnabledRarities = {
+		Ethereal = true,
+		Divine = true,
+		Mythic = true,
+		Legendary = true,
+		Epic = true,
+		Rare = true,
+		Uncommon = true,
+		Common = true,
+	},
 }
 
 local function loadSettings()
@@ -53,6 +63,48 @@ end
 loadSettings()
 
 -------------------------------------------------
+-- RARITY SYSTEM (EDIT THIS PART MANUALLY)
+-------------------------------------------------
+local Rarities = {
+	"Ethereal",
+	"Divine",
+	"Mythic",
+	"Legendary",
+	"Epic",
+	"Rare",
+	"Uncommon",
+	"Common"
+}
+
+-- Manually put egg names under the rarity you want
+local RarityEggs = {
+	Ethereal = {
+		-- "EggNameHere",
+	},
+	Divine = {
+		-- "EggNameHere",
+	},
+	Mythic = {
+		-- "EggNameHere",
+	},
+	Legendary = {
+		-- "EggNameHere",
+	},
+	Epic = {
+		-- "EggNameHere",
+	},
+	Rare = {
+		-- "EggNameHere",
+	},
+	Uncommon = {
+		-- "EggNameHere",
+	},
+	Common = {
+		-- "EggNameHere",
+	},
+}
+
+-------------------------------------------------
 -- STATE
 -------------------------------------------------
 local isOpen = true
@@ -61,6 +113,8 @@ local eggButtons = {}
 local espObjects = {}
 local espEnabled = Settings.ESPEnabled
 local autoRefreshEnabled = Settings.AutoRefreshEnabled
+local enabledRarities = Settings.EnabledRarities
+local rarityButtons = {}
 
 -------------------------------------------------
 -- Cleanup
@@ -83,8 +137,8 @@ screenGui.Parent = playerGui
 
 local main = Instance.new("Frame")
 main.Name = "Main"
-main.Size = UDim2.new(0, 620, 0, 460)
-main.Position = UDim2.new(0.5, -310, 0.5, -230)
+main.Size = UDim2.new(0, 680, 0, 500)
+main.Position = UDim2.new(0.5, -340, 0.5, -250)
 main.BackgroundColor3 = Color3.fromRGB(22, 22, 28)
 main.BorderSizePixel = 0
 main.Active = true
@@ -102,7 +156,7 @@ mainStroke.Parent = main
 -- Sidebar
 local sidebar = Instance.new("Frame")
 sidebar.Name = "Sidebar"
-sidebar.Size = UDim2.new(0, 160, 1, 0)
+sidebar.Size = UDim2.new(0, 150, 1, 0)
 sidebar.BackgroundColor3 = Color3.fromRGB(16, 16, 22)
 sidebar.BorderSizePixel = 0
 sidebar.Parent = main
@@ -112,83 +166,83 @@ sideCorner.CornerRadius = UDim.new(0, 12)
 sideCorner.Parent = sidebar
 
 local sideCover = Instance.new("Frame")
-sideCover.Size = UDim2.new(0, 20, 1, 0)
-sideCover.Position = UDim2.new(1, -20, 0, 0)
+sideCover.Size = UDim2.new(0, 16, 1, 0)
+sideCover.Position = UDim2.new(1, -16, 0, 0)
 sideCover.BackgroundColor3 = Color3.fromRGB(16, 16, 22)
 sideCover.BorderSizePixel = 0
 sideCover.Parent = sidebar
 
 local sideTitle = Instance.new("TextLabel")
-sideTitle.Size = UDim2.new(1, -20, 0, 50)
-sideTitle.Position = UDim2.new(0, 12, 0, 8)
+sideTitle.Size = UDim2.new(1, -16, 0, 36)
+sideTitle.Position = UDim2.new(0, 10, 0, 8)
 sideTitle.BackgroundTransparency = 1
 sideTitle.Text = "Divine Soul"
 sideTitle.TextColor3 = Color3.fromRGB(240, 240, 255)
 sideTitle.Font = Enum.Font.GothamBold
-sideTitle.TextSize = 16
+sideTitle.TextSize = 15
 sideTitle.TextXAlignment = Enum.TextXAlignment.Left
 sideTitle.Parent = sidebar
 
 local sideSub = Instance.new("TextLabel")
-sideSub.Size = UDim2.new(1, -20, 0, 18)
-sideSub.Position = UDim2.new(0, 12, 0, 36)
+sideSub.Size = UDim2.new(1, -16, 0, 16)
+sideSub.Position = UDim2.new(0, 10, 0, 36)
 sideSub.BackgroundTransparency = 1
 sideSub.Text = "Ride a Pet"
 sideSub.TextColor3 = Color3.fromRGB(140, 140, 170)
 sideSub.Font = Enum.Font.Gotham
-sideSub.TextSize = 12
+sideSub.TextSize = 11
 sideSub.TextXAlignment = Enum.TextXAlignment.Left
 sideSub.Parent = sidebar
 
 -- Content
 local content = Instance.new("Frame")
 content.Name = "Content"
-content.Size = UDim2.new(1, -170, 1, -20)
-content.Position = UDim2.new(0, 165, 0, 10)
+content.Size = UDim2.new(1, -160, 1, -16)
+content.Position = UDim2.new(0, 155, 0, 8)
 content.BackgroundTransparency = 1
 content.Parent = main
 
 local headerBar = Instance.new("Frame")
-headerBar.Size = UDim2.new(1, 0, 0, 42)
+headerBar.Size = UDim2.new(1, 0, 0, 40)
 headerBar.BackgroundColor3 = Color3.fromRGB(28, 28, 36)
 headerBar.BorderSizePixel = 0
 headerBar.Parent = content
 
 local headerCorner = Instance.new("UICorner")
-headerCorner.CornerRadius = UDim.new(0, 10)
+headerCorner.CornerRadius = UDim.new(0, 9)
 headerCorner.Parent = headerBar
 
 local headerTitle = Instance.new("TextLabel")
 headerTitle.Size = UDim2.new(1, -50, 1, 0)
-headerTitle.Position = UDim2.new(0, 14, 0, 0)
+headerTitle.Position = UDim2.new(0, 12, 0, 0)
 headerTitle.BackgroundTransparency = 1
 headerTitle.Text = "Controls & Eggs"
 headerTitle.TextColor3 = Color3.fromRGB(230, 230, 255)
 headerTitle.Font = Enum.Font.GothamMedium
-headerTitle.TextSize = 15
+headerTitle.TextSize = 14
 headerTitle.TextXAlignment = Enum.TextXAlignment.Left
 headerTitle.Parent = headerBar
 
 -- Close button (X)
 local closeBtn = Instance.new("TextButton")
-closeBtn.Size = UDim2.new(0, 32, 0, 28)
-closeBtn.Position = UDim2.new(1, -40, 0.5, -14)
+closeBtn.Size = UDim2.new(0, 30, 0, 26)
+closeBtn.Position = UDim2.new(1, -38, 0.5, -13)
 closeBtn.BackgroundColor3 = Color3.fromRGB(50, 30, 35)
 closeBtn.Text = "×"
 closeBtn.TextColor3 = Color3.fromRGB(255, 180, 180)
 closeBtn.Font = Enum.Font.GothamBold
-closeBtn.TextSize = 18
+closeBtn.TextSize = 17
 closeBtn.AutoButtonColor = false
 closeBtn.Parent = headerBar
 
 local closeCorner = Instance.new("UICorner")
-closeCorner.CornerRadius = UDim.new(0, 7)
+closeCorner.CornerRadius = UDim.new(0, 6)
 closeCorner.Parent = closeBtn
 
--- Open / Toggle button (DS) - always visible + draggable
+-- Open / Toggle button (DS)
 local openBtn = Instance.new("TextButton")
 openBtn.Size = UDim2.new(0, 48, 0, 48)
-openBtn.Position = UDim2.new(0, 40, 0, 100) -- Left top, close to middle
+openBtn.Position = UDim2.new(0, 40, 0, 100)
 openBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 45)
 openBtn.Text = "DS"
 openBtn.TextColor3 = Color3.fromRGB(220, 220, 255)
@@ -237,7 +291,7 @@ notifText.TextXAlignment = Enum.TextXAlignment.Center
 notifText.Parent = notif
 
 -------------------------------------------------
--- Dragging (Main Window)
+-- Dragging
 -------------------------------------------------
 local dragging, dragStart, startPos = false, nil, nil
 
@@ -262,13 +316,9 @@ UserInputService.InputChanged:Connect(function(input)
 	end
 end)
 
--------------------------------------------------
--- Open Button Drag + Toggle (improved)
--------------------------------------------------
+-- Open button drag
 local openDragging = false
-local openDragStart = nil
-local openStartPos = nil
-local openMoved = false
+local openDragStart, openStartPos, openMoved = false, nil, nil
 
 openBtn.InputBegan:Connect(function(input)
 	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
@@ -279,21 +329,14 @@ openBtn.InputBegan:Connect(function(input)
 	end
 end)
 
--- Use UserInputService so dragging continues even if mouse leaves the button
 UserInputService.InputEnded:Connect(function(input)
 	if openDragging and (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) then
 		openDragging = false
-
-		-- Only toggle if it was a click (not a drag)
 		if not openMoved then
 			isOpen = not isOpen
 			main.Visible = isOpen
-			if isOpen then
-				notify("UI opened")
-			else
-				notify("UI closed")
-				saveSettings()
-			end
+			notify(isOpen and "UI opened" or "UI closed")
+			if not isOpen then saveSettings() end
 		end
 	end
 end)
@@ -301,17 +344,10 @@ end)
 UserInputService.InputChanged:Connect(function(input)
 	if openDragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
 		local delta = input.Position - openDragStart
-
 		if math.abs(delta.X) > 5 or math.abs(delta.Y) > 5 then
 			openMoved = true
 		end
-
-		openBtn.Position = UDim2.new(
-			openStartPos.X.Scale,
-			openStartPos.X.Offset + delta.X,
-			openStartPos.Y.Scale,
-			openStartPos.Y.Offset + delta.Y
-		)
+		openBtn.Position = UDim2.new(openStartPos.X.Scale, openStartPos.X.Offset + delta.X, openStartPos.Y.Scale, openStartPos.Y.Offset + delta.Y)
 	end
 end)
 
@@ -319,8 +355,8 @@ end)
 -- Content Layout
 -------------------------------------------------
 local leftContent = Instance.new("ScrollingFrame")
-leftContent.Size = UDim2.new(0.48, 0, 1, -55)
-leftContent.Position = UDim2.new(0, 0, 0, 50)
+leftContent.Size = UDim2.new(0.42, 0, 1, -50)
+leftContent.Position = UDim2.new(0, 0, 0, 48)
 leftContent.BackgroundTransparency = 1
 leftContent.BorderSizePixel = 0
 leftContent.ScrollBarThickness = 3
@@ -328,13 +364,13 @@ leftContent.AutomaticCanvasSize = Enum.AutomaticSize.Y
 leftContent.Parent = content
 
 local leftList = Instance.new("UIListLayout")
-leftList.Padding = UDim.new(0, 8)
+leftList.Padding = UDim.new(0, 7)
 leftList.SortOrder = Enum.SortOrder.LayoutOrder
 leftList.Parent = leftContent
 
 local rightContent = Instance.new("ScrollingFrame")
-rightContent.Size = UDim2.new(0.48, 0, 1, -100)
-rightContent.Position = UDim2.new(0.52, 0, 0, 90)
+rightContent.Size = UDim2.new(0.55, 0, 1, -95)
+rightContent.Position = UDim2.new(0.44, 0, 0, 88)
 rightContent.BackgroundTransparency = 1
 rightContent.BorderSizePixel = 0
 rightContent.ScrollBarThickness = 3
@@ -342,13 +378,14 @@ rightContent.AutomaticCanvasSize = Enum.AutomaticSize.Y
 rightContent.Parent = content
 
 local rightList = Instance.new("UIListLayout")
-rightList.Padding = UDim.new(0, 7)
+rightList.Padding = UDim.new(0, 6)
 rightList.SortOrder = Enum.SortOrder.LayoutOrder
 rightList.Parent = rightContent
 
+-- Search
 local searchBox = Instance.new("TextBox")
-searchBox.Size = UDim2.new(0.48, 0, 0, 34)
-searchBox.Position = UDim2.new(0.52, 0, 0, 50)
+searchBox.Size = UDim2.new(0.55, 0, 0, 32)
+searchBox.Position = UDim2.new(0.44, 0, 0, 48)
 searchBox.BackgroundColor3 = Color3.fromRGB(32, 32, 42)
 searchBox.Text = ""
 searchBox.PlaceholderText = "Search eggs..."
@@ -388,7 +425,7 @@ end
 
 local function createSection(parent, title)
 	local label = Instance.new("TextLabel")
-	label.Size = UDim2.new(1, 0, 0, 22)
+	label.Size = UDim2.new(1, 0, 0, 20)
 	label.BackgroundTransparency = 1
 	label.Text = title
 	label.TextColor3 = Color3.fromRGB(140, 140, 170)
@@ -400,7 +437,7 @@ end
 
 local function createToggle(parent, text, default, callback)
 	local frame = Instance.new("Frame")
-	frame.Size = UDim2.new(1, 0, 0, 36)
+	frame.Size = UDim2.new(1, 0, 0, 34)
 	frame.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
 	frame.BorderSizePixel = 0
 	frame.Parent = parent
@@ -410,8 +447,8 @@ local function createToggle(parent, text, default, callback)
 	corner.Parent = frame
 
 	local label = Instance.new("TextLabel")
-	label.Size = UDim2.new(1, -60, 1, 0)
-	label.Position = UDim2.new(0, 12, 0, 0)
+	label.Size = UDim2.new(1, -55, 1, 0)
+	label.Position = UDim2.new(0, 10, 0, 0)
 	label.BackgroundTransparency = 1
 	label.Text = text
 	label.TextColor3 = Color3.fromRGB(220, 220, 240)
@@ -421,8 +458,8 @@ local function createToggle(parent, text, default, callback)
 	label.Parent = frame
 
 	local toggle = Instance.new("TextButton")
-	toggle.Size = UDim2.new(0, 42, 0, 22)
-	toggle.Position = UDim2.new(1, -50, 0.5, -11)
+	toggle.Size = UDim2.new(0, 40, 0, 20)
+	toggle.Position = UDim2.new(1, -48, 0.5, -10)
 	toggle.BackgroundColor3 = default and Color3.fromRGB(50, 140, 80) or Color3.fromRGB(60, 60, 75)
 	toggle.Text = ""
 	toggle.AutoButtonColor = false
@@ -433,8 +470,8 @@ local function createToggle(parent, text, default, callback)
 	tCorner.Parent = toggle
 
 	local knob = Instance.new("Frame")
-	knob.Size = UDim2.new(0, 16, 0, 16)
-	knob.Position = default and UDim2.new(1, -19, 0.5, -8) or UDim2.new(0, 3, 0.5, -8)
+	knob.Size = UDim2.new(0, 14, 0, 14)
+	knob.Position = default and UDim2.new(1, -17, 0.5, -7) or UDim2.new(0, 3, 0.5, -7)
 	knob.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 	knob.BorderSizePixel = 0
 	knob.Parent = toggle
@@ -451,7 +488,7 @@ local function createToggle(parent, text, default, callback)
 			BackgroundColor3 = state and Color3.fromRGB(50, 140, 80) or Color3.fromRGB(60, 60, 75)
 		}):Play()
 		TweenService:Create(knob, TweenInfo.new(0.18), {
-			Position = state and UDim2.new(1, -19, 0.5, -8) or UDim2.new(0, 3, 0.5, -8)
+			Position = state and UDim2.new(1, -17, 0.5, -7) or UDim2.new(0, 3, 0.5, -7)
 		}):Play()
 		callback(state)
 		saveSettings()
@@ -460,7 +497,7 @@ end
 
 local function createButton(parent, text, color, callback)
 	local btn = Instance.new("TextButton")
-	btn.Size = UDim2.new(1, 0, 0, 36)
+	btn.Size = UDim2.new(1, 0, 0, 34)
 	btn.BackgroundColor3 = color
 	btn.Text = text
 	btn.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -488,7 +525,7 @@ end
 
 local function createSlider(parent, labelText, minV, maxV, default, callback)
 	local frame = Instance.new("Frame")
-	frame.Size = UDim2.new(1, 0, 0, 58)
+	frame.Size = UDim2.new(1, 0, 0, 54)
 	frame.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
 	frame.BorderSizePixel = 0
 	frame.Parent = parent
@@ -498,8 +535,8 @@ local function createSlider(parent, labelText, minV, maxV, default, callback)
 	corner.Parent = frame
 
 	local title = Instance.new("TextLabel")
-	title.Size = UDim2.new(1, -70, 0, 18)
-	title.Position = UDim2.new(0, 12, 0, 6)
+	title.Size = UDim2.new(1, -65, 0, 16)
+	title.Position = UDim2.new(0, 10, 0, 5)
 	title.BackgroundTransparency = 1
 	title.Text = labelText
 	title.TextColor3 = Color3.fromRGB(190, 190, 220)
@@ -509,8 +546,8 @@ local function createSlider(parent, labelText, minV, maxV, default, callback)
 	title.Parent = frame
 
 	local valueBox = Instance.new("TextBox")
-	valueBox.Size = UDim2.new(0, 50, 0, 18)
-	valueBox.Position = UDim2.new(1, -60, 0, 6)
+	valueBox.Size = UDim2.new(0, 48, 0, 16)
+	valueBox.Position = UDim2.new(1, -56, 0, 5)
 	valueBox.BackgroundColor3 = Color3.fromRGB(40, 40, 55)
 	valueBox.Text = tostring(default)
 	valueBox.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -524,8 +561,8 @@ local function createSlider(parent, labelText, minV, maxV, default, callback)
 	vbCorner.Parent = valueBox
 
 	local track = Instance.new("Frame")
-	track.Size = UDim2.new(1, -24, 0, 5)
-	track.Position = UDim2.new(0, 12, 0, 36)
+	track.Size = UDim2.new(1, -20, 0, 5)
+	track.Position = UDim2.new(0, 10, 0, 32)
 	track.BackgroundColor3 = Color3.fromRGB(50, 50, 70)
 	track.BorderSizePixel = 0
 	track.Parent = frame
@@ -545,7 +582,7 @@ local function createSlider(parent, labelText, minV, maxV, default, callback)
 	fillCorner.Parent = fill
 
 	local knob = Instance.new("TextButton")
-	knob.Size = UDim2.new(0, 14, 0, 14)
+	knob.Size = UDim2.new(0, 13, 0, 13)
 	knob.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 	knob.Text = ""
 	knob.AutoButtonColor = false
@@ -562,7 +599,7 @@ local function createSlider(parent, labelText, minV, maxV, default, callback)
 		val = math.floor(val * 100 + 0.5) / 100
 		local a = (val - minV) / (maxV - minV)
 		fill.Size = UDim2.new(a, 0, 1, 0)
-		knob.Position = UDim2.new(a, -7, 0.5, -7)
+		knob.Position = UDim2.new(a, -6, 0.5, -6)
 		valueBox.Text = tostring(val)
 		callback(val)
 		saveSettings()
@@ -649,7 +686,7 @@ local function multiStepToBase()
 end
 
 -------------------------------------------------
--- Eggs
+-- Eggs (Multiple Rarity Support)
 -------------------------------------------------
 local function clearEggButtons()
 	for btn in pairs(eggButtons) do
@@ -660,21 +697,30 @@ end
 
 local function refreshEggs()
 	clearEggButtons()
+
 	local rendered = workspace:FindFirstChild("RenderedEggs")
 	if not rendered then
 		notify("No RenderedEggs found")
 		return
 	end
 
-	local unique = {}
+	-- Build list of allowed egg names from all enabled rarities
+	local allowed = {}
+	for rarity, isEnabled in pairs(enabledRarities) do
+		if isEnabled and RarityEggs[rarity] then
+			for _, name in ipairs(RarityEggs[rarity]) do
+				allowed[name] = true
+			end
+		end
+	end
+
 	local count = 0
 
 	for _, egg in ipairs(rendered:GetChildren()) do
-		if not unique[egg.Name] then
-			unique[egg.Name] = true
+		if allowed[egg.Name] then
 			if currentSearch == "" or egg.Name:lower():find(currentSearch:lower(), 1, true) then
 				count += 1
-				local btn = createButton(rightContent, "Egg • " .. egg.Name, Color3.fromRGB(36, 36, 48), function()
+				local btn = createButton(rightContent, egg.Name, Color3.fromRGB(36, 36, 48), function()
 					teleportTo(egg)
 					notify("Teleported to " .. egg.Name)
 				end)
@@ -682,13 +728,66 @@ local function refreshEggs()
 			end
 		end
 	end
-	notify("Loaded " .. count .. " eggs")
+
+	notify("Showing " .. count .. " eggs")
 end
 
 searchBox:GetPropertyChangedSignal("Text"):Connect(function()
 	currentSearch = searchBox.Text
 	refreshEggs()
 end)
+
+-------------------------------------------------
+-- Rarity Buttons (Multi Select)
+-------------------------------------------------
+local function updateRarityButtons()
+	for rarity, btn in pairs(rarityButtons) do
+		if enabledRarities[rarity] then
+			btn.BackgroundColor3 = Color3.fromRGB(45, 110, 70)
+			btn.Text = "ON  " .. rarity
+		else
+			btn.BackgroundColor3 = Color3.fromRGB(55, 35, 40)
+			btn.Text = "OFF " .. rarity
+		end
+	end
+end
+
+local function createRarityButton(rarity)
+	local btn = Instance.new("TextButton")
+	btn.Size = UDim2.new(1, -12, 0, 28)
+	btn.BackgroundColor3 = Color3.fromRGB(35, 35, 48)
+	btn.Text = rarity
+	btn.TextColor3 = Color3.fromRGB(230, 230, 255)
+	btn.Font = Enum.Font.GothamMedium
+	btn.TextSize = 12
+	btn.AutoButtonColor = false
+	btn.Parent = sidebar
+
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(0, 6)
+	corner.Parent = btn
+
+	btn.MouseButton1Click:Connect(function()
+		enabledRarities[rarity] = not enabledRarities[rarity]
+		Settings.EnabledRarities = enabledRarities
+		updateRarityButtons()
+		refreshEggs()
+		saveSettings()
+	end)
+
+	rarityButtons[rarity] = btn
+	return btn
+end
+
+-- Create rarity buttons
+local rarityY = 58
+for _, rarity in ipairs(Rarities) do
+	local btn = createRarityButton(rarity)
+	btn.Position = UDim2.new(0, 6, 0, rarityY)
+	rarityY += 32
+end
+
+updateRarityButtons()
 
 -------------------------------------------------
 -- ESP
@@ -812,7 +911,7 @@ createButton(rightContent, "Refresh Eggs", Color3.fromRGB(45, 45, 70), function(
 end)
 
 -------------------------------------------------
--- Close button (X)
+-- Close
 -------------------------------------------------
 closeBtn.MouseButton1Click:Connect(function()
 	main.Visible = false
@@ -847,4 +946,4 @@ end)
 
 refreshEggs()
 notify("Divine Soul loaded")
-print("Divine Soul - Ride a Pet loaded")
+print("Divine Soul - Ride a Pet loaded (Multi Rarity Support)")
