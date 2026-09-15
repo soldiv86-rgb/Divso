@@ -1,4 +1,4 @@
--- Divine Soul - Ride a Pet (Black & Orange + Auto Farm)
+-- Divine Soul - Ride a Pet (Black & Orange + Auto Farm + Status Panel)
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
@@ -22,7 +22,7 @@ local Settings = {
 	AutoFarmEnabled = false,
 	AutoFarmDelay = 1.2,
 	ReturnMethod = "Tween", -- "Tween" or "MultiStep"
-	CollectKey = Enum.KeyCode.E,
+	CollectHoldTime = 0.75,
 	EnabledRarities = {
 		Ethereal = true, Divine = true, Mythic = true, Legendary = true,
 		Epic = true, Rare = true, Common = true
@@ -88,6 +88,13 @@ local autoRefreshEnabled = Settings.AutoRefreshEnabled
 local autoFarmEnabled = Settings.AutoFarmEnabled
 local enabledRarities = Settings.EnabledRarities
 local returnMethod = Settings.ReturnMethod
+
+-- Auto Farm Stats
+local farmStartTime = 0
+local eggsCollected = 0
+local lastCollectedRarity = "-"
+local currentAction = "Idle"
+local currentTarget = "-"
 -------------------------------------------------
 -- CLEANUP
 -------------------------------------------------
@@ -97,6 +104,103 @@ end
 if CoreGui:FindFirstChild("EggSizeESP") then
 	CoreGui.EggSizeESP:Destroy()
 end
+if playerGui:FindFirstChild("DivineSoulStatus") then
+	playerGui.DivineSoulStatus:Destroy()
+end
+-------------------------------------------------
+-- STATUS PANEL (Top Right)
+-------------------------------------------------
+local statusGui = Instance.new("ScreenGui")
+statusGui.Name = "DivineSoulStatus"
+statusGui.ResetOnSpawn = false
+statusGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+statusGui.Parent = playerGui
+
+local statusPanel = Instance.new("Frame")
+statusPanel.Size = UDim2.new(0, 280, 0, 0)
+statusPanel.AutomaticSize = Enum.AutomaticSize.Y
+statusPanel.Position = UDim2.new(1, -300, 0, 20) -- Top right with margin
+statusPanel.BackgroundColor3 = Color3.fromRGB(14, 14, 16)
+statusPanel.BorderSizePixel = 0
+statusPanel.Visible = false
+statusPanel.Parent = statusGui
+
+local statusCorner = Instance.new("UICorner")
+statusCorner.CornerRadius = UDim.new(0, 10)
+statusCorner.Parent = statusPanel
+
+local statusStroke = Instance.new("UIStroke")
+statusStroke.Color = Color3.fromRGB(255, 140, 40)
+statusStroke.Thickness = 1.2
+statusStroke.Parent = statusPanel
+
+local statusPadding = Instance.new("UIPadding")
+statusPadding.PaddingTop = UDim.new(0, 12)
+statusPadding.PaddingBottom = UDim.new(0, 12)
+statusPadding.PaddingLeft = UDim.new(0, 14)
+statusPadding.PaddingRight = UDim.new(0, 14)
+statusPadding.Parent = statusPanel
+
+local statusList = Instance.new("UIListLayout")
+statusList.Padding = UDim.new(0, 4)
+statusList.Parent = statusPanel
+
+local function addStatusLabel(text, color, size)
+	local label = Instance.new("TextLabel")
+	label.Size = UDim2.new(1, 0, 0, size or 18)
+	label.BackgroundTransparency = 1
+	label.Text = text
+	label.TextColor3 = color or Color3.fromRGB(220, 180, 120)
+	label.Font = Enum.Font.Gotham
+	label.TextSize = 13
+	label.TextXAlignment = Enum.TextXAlignment.Left
+	label.TextWrapped = true
+	label.Parent = statusPanel
+	return label
+end
+
+local titleLabel = addStatusLabel("Divine Soul • Auto Farm", Color3.fromRGB(255, 160, 50), 20)
+titleLabel.Font = Enum.Font.GothamBold
+
+local statusLabel = addStatusLabel("Status: Idle", Color3.fromRGB(180, 180, 180))
+local actionLabel = addStatusLabel("Action: -", Color3.fromRGB(220, 180, 120))
+local targetLabel = addStatusLabel("Target: -", Color3.fromRGB(220, 180, 120))
+local collectedLabel = addStatusLabel("Eggs Collected: 0", Color3.fromRGB(220, 180, 120))
+local lastRarityLabel = addStatusLabel("Last Rarity: -", Color3.fromRGB(220, 180, 120))
+local uptimeLabel = addStatusLabel("Uptime: 00:00", Color3.fromRGB(180, 180, 180))
+local settingsLabel = addStatusLabel("Delay: 1.2s  |  Return: Tween", Color3.fromRGB(160, 140, 100))
+
+local function updateStatusPanel()
+	if not autoFarmEnabled then
+		statusPanel.Visible = false
+		return
+	end
+	statusPanel.Visible = true
+
+	statusLabel.Text = "Status: " .. (autoFarmEnabled and "Running" or "Idle")
+	actionLabel.Text = "Action: " .. currentAction
+	targetLabel.Text = "Target: " .. currentTarget
+	collectedLabel.Text = "Eggs Collected: " .. eggsCollected
+	lastRarityLabel.Text = "Last Rarity: " .. lastCollectedRarity
+
+	local elapsed = math.floor(os.clock() - farmStartTime)
+	local mins = math.floor(elapsed / 60)
+	local secs = elapsed % 60
+	uptimeLabel.Text = string.format("Uptime: %02d:%02d", mins, secs)
+
+	settingsLabel.Text = string.format("Delay: %.1fs  |  Return: %s", Settings.AutoFarmDelay, returnMethod)
+end
+
+-- Live updater
+task.spawn(function()
+	while task.wait(0.5) do
+		if autoFarmEnabled then
+			updateStatusPanel()
+		else
+			statusPanel.Visible = false
+		end
+	end
+end)
 -------------------------------------------------
 -- UI
 -------------------------------------------------
@@ -682,17 +786,44 @@ local function returnToBase()
 	end
 end
 
-local function pressCollectKey()
-	local key = Settings.CollectKey or Enum.KeyCode.E
+-- Improved collect (ProximityPrompt hold)
+local function collectEgg(egg)
+	currentAction = "Collecting..."
+	updateStatusPanel()
+
+	-- Try ProximityPrompt first (best method)
+	local prompt = egg:FindFirstChildWhichIsA("ProximityPrompt", true)
+	if prompt then
+		pcall(function()
+			prompt:InputHoldBegin()
+			task.wait(Settings.CollectHoldTime)
+			prompt:InputHoldEnd()
+		end)
+		return true
+	end
+
+	-- Fallback: hold E key
 	pcall(function()
-		VirtualInputManager:SendKeyEvent(true, key, false, game)
-		task.wait(0.05)
-		VirtualInputManager:SendKeyEvent(false, key, false, game)
+		VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.E, false, game)
+		task.wait(Settings.CollectHoldTime)
+		VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
 	end)
+	return true
 end
 -------------------------------------------------
 -- AUTO FARM LOGIC
 -------------------------------------------------
+local function getEggRarity(eggName)
+	for rarity, names in pairs(RarityEggs) do
+		for _, name in ipairs(names) do
+			if name == eggName then
+				return rarity
+			end
+		end
+	end
+	return "Unknown"
+end
+
 local function getBestEgg()
 	local rendered = workspace:FindFirstChild("RenderedEggs")
 	if not rendered then return nil end
@@ -701,17 +832,12 @@ local function getBestEgg()
 	local bestPriority = -1
 
 	for _, egg in ipairs(rendered:GetChildren()) do
-		for rarity, names in pairs(RarityEggs) do
-			if enabledRarities[rarity] then
-				for _, name in ipairs(names) do
-					if egg.Name == name then
-						local prio = RarityPriority[rarity] or 0
-						if prio > bestPriority then
-							bestPriority = prio
-							bestEgg = egg
-						end
-					end
-				end
+		local rarity = getEggRarity(egg.Name)
+		if enabledRarities[rarity] then
+			local prio = RarityPriority[rarity] or 0
+			if prio > bestPriority then
+				bestPriority = prio
+				bestEgg = egg
 			end
 		end
 	end
@@ -722,27 +848,49 @@ local autoFarmRunning = false
 local function startAutoFarm()
 	if autoFarmRunning then return end
 	autoFarmRunning = true
+	farmStartTime = os.clock()
+	eggsCollected = 0
+	lastCollectedRarity = "-"
+	currentAction = "Starting..."
+	currentTarget = "-"
 
 	task.spawn(function()
 		while autoFarmEnabled and screenGui.Parent do
 			local egg = getBestEgg()
-			if egg then
-				-- Instant TP to egg
+			if egg and egg.Parent then
+				local rarity = getEggRarity(egg.Name)
+				currentTarget = egg.Name .. " (" .. rarity .. ")"
+				currentAction = "Teleporting to egg"
+				updateStatusPanel()
+
 				teleportTo(egg)
+				task.wait(0.3)
+
+				currentAction = "Holding to collect"
+				updateStatusPanel()
+				collectEgg(egg)
+
 				task.wait(0.25)
-				-- Collect
-				pressCollectKey()
-				task.wait(0.35)
-				-- Return to base
+
+				-- Count it
+				eggsCollected += 1
+				lastCollectedRarity = rarity
+
+				currentAction = "Returning to base"
+				updateStatusPanel()
 				returnToBase()
-				-- Wait for the delay
+
 				task.wait(Settings.AutoFarmDelay)
 			else
-				-- No eggs found → wait a bit then check again
+				currentAction = "Waiting for eggs..."
+				currentTarget = "-"
+				updateStatusPanel()
 				task.wait(1.5)
 			end
 		end
 		autoFarmRunning = false
+		currentAction = "Stopped"
+		updateStatusPanel()
 	end)
 end
 -------------------------------------------------
@@ -841,7 +989,7 @@ updateRarityButtons()
 -- CONTROLS
 -------------------------------------------------
 
--- AUTO FARM CARD (top)
+-- AUTO FARM CARD
 local autoFarmCard = createCard(left, "AUTO FARM")
 
 createToggle(autoFarmCard, "Auto Farm", Settings.AutoFarmEnabled, function(state)
@@ -1060,16 +1208,8 @@ local function getSizeLabel(egg)
 end
 
 local function isEggAllowed(egg)
-	for rarity, names in pairs(RarityEggs) do
-		if enabledRarities[rarity] then
-			for _, name in ipairs(names) do
-				if egg.Name == name then
-					return true
-				end
-			end
-		end
-	end
-	return false
+	local rarity = getEggRarity(egg.Name)
+	return enabledRarities[rarity] == true
 end
 
 local function createESP(egg)
@@ -1140,10 +1280,9 @@ task.spawn(function()
 	end
 end)
 
--- Start auto farm if it was enabled
 if autoFarmEnabled then
 	startAutoFarm()
 end
 
 refreshEggs()
-print("Divine Soul loaded - Auto Farm + Filtered ESP")
+print("Divine Soul loaded - Auto Farm + Status Panel + Better Collect")
