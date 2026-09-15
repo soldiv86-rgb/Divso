@@ -72,10 +72,10 @@ local RarityColors = {
 local RarityEggs = {
 	Ethereal = { "Cherub Egg" },
 	Divine = {"Blackhole Egg", "Galaxy Egg", "Aurora Egg" },
-	Mythic = { "Sinister egg", "Soul Egg" },
+	Mythic = { "Dominus Egg", "Flaming Egg", "Sinister egg", "Soul Egg" },
 	Legendary = { "Glass Egg", "Golden Egg" },
-	Epic = {},
-	Rare = {},
+	Epic = { "Mushroom Egg", "Flower Egg", "Slime Egg", "Ice Egg" },
+	Rare = { "Cracked Egg", "Easter Egg", "Stone Egg", "Leaf Egg" },
 	Common = { "Brown Egg", "White Egg" },
 }
 
