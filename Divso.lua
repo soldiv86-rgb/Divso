@@ -1,4 +1,4 @@
--- Divine Soul - Ride a Pet (Card Layout)
+-- Divine Soul - Ride a Pet (Black & Orange + Card Layout)
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
@@ -46,17 +46,17 @@ local function saveSettings()
 end
 loadSettings()
 -------------------------------------------------
--- RARITY DATA
+-- RARITY DATA (Pristine colors)
 -------------------------------------------------
 local Rarities = {"Ethereal", "Divine", "Mythic", "Legendary", "Epic", "Rare", "Common"}
 local RarityColors = {
-	Ethereal  = Color3.fromRGB(180, 70, 255),
-	Divine    = Color3.fromRGB(255, 210, 70),
-	Mythic    = Color3.fromRGB(170, 50, 210),
-	Legendary = Color3.fromRGB(255, 165, 30),
-	Epic      = Color3.fromRGB(160, 50, 200),
-	Rare      = Color3.fromRGB(50, 120, 255),
-	Common    = Color3.fromRGB(150, 150, 160),
+	Ethereal  = Color3.fromRGB(200, 90, 255),   -- Bright violet
+	Divine    = Color3.fromRGB(255, 215, 60),   -- Clean gold
+	Mythic    = Color3.fromRGB(190, 60, 255),   -- Vivid purple
+	Legendary = Color3.fromRGB(255, 155, 30),   -- Strong orange-gold
+	Epic      = Color3.fromRGB(170, 70, 255),   -- Rich purple
+	Rare      = Color3.fromRGB(60, 140, 255),   -- Bright blue
+	Common    = Color3.fromRGB(160, 160, 170),  -- Soft gray
 }
 local RarityEggs = {
 	Ethereal = { "Cherub Egg" },
@@ -78,8 +78,6 @@ local espObjects = {}
 local espEnabled = Settings.ESPEnabled
 local autoRefreshEnabled = Settings.AutoRefreshEnabled
 local enabledRarities = Settings.EnabledRarities
-local selectedPlayer = nil
-local playerButtons = {}
 -------------------------------------------------
 -- CLEANUP
 -------------------------------------------------
@@ -101,7 +99,7 @@ screenGui.Parent = playerGui
 local main = Instance.new("Frame")
 main.Size = UDim2.new(0, 780, 0, 520)
 main.Position = UDim2.new(0.5, -390, 0.5, -260)
-main.BackgroundColor3 = Color3.fromRGB(18, 18, 24)
+main.BackgroundColor3 = Color3.fromRGB(12, 12, 14)
 main.BorderSizePixel = 0
 main.Active = true
 main.Parent = screenGui
@@ -109,15 +107,15 @@ local mainCorner = Instance.new("UICorner")
 mainCorner.CornerRadius = UDim.new(0, 12)
 mainCorner.Parent = main
 local mainStroke = Instance.new("UIStroke")
-mainStroke.Color = Color3.fromRGB(45, 45, 65)
-mainStroke.Thickness = 1
+mainStroke.Color = Color3.fromRGB(255, 140, 40)
+mainStroke.Thickness = 1.2
 mainStroke.Parent = main
 -------------------------------------------------
 -- LEFT SIDEBAR
 -------------------------------------------------
 local sidebar = Instance.new("Frame")
 sidebar.Size = UDim2.new(0, 170, 1, 0)
-sidebar.BackgroundColor3 = Color3.fromRGB(14, 14, 20)
+sidebar.BackgroundColor3 = Color3.fromRGB(8, 8, 10)
 sidebar.BorderSizePixel = 0
 sidebar.Parent = main
 local sideCorner = Instance.new("UICorner")
@@ -126,7 +124,7 @@ sideCorner.Parent = sidebar
 local sideCover = Instance.new("Frame")
 sideCover.Size = UDim2.new(0, 20, 1, 0)
 sideCover.Position = UDim2.new(1, -20, 0, 0)
-sideCover.BackgroundColor3 = Color3.fromRGB(14, 14, 20)
+sideCover.BackgroundColor3 = Color3.fromRGB(8, 8, 10)
 sideCover.BorderSizePixel = 0
 sideCover.Parent = sidebar
 
@@ -135,7 +133,7 @@ sideTitle.Size = UDim2.new(1, -20, 0, 28)
 sideTitle.Position = UDim2.new(0, 14, 0, 14)
 sideTitle.BackgroundTransparency = 1
 sideTitle.Text = "Divine Soul"
-sideTitle.TextColor3 = Color3.fromRGB(245, 245, 255)
+sideTitle.TextColor3 = Color3.fromRGB(255, 160, 50)
 sideTitle.Font = Enum.Font.GothamBold
 sideTitle.TextSize = 17
 sideTitle.TextXAlignment = Enum.TextXAlignment.Left
@@ -146,7 +144,7 @@ sideSub.Size = UDim2.new(1, -20, 0, 18)
 sideSub.Position = UDim2.new(0, 14, 0, 40)
 sideSub.BackgroundTransparency = 1
 sideSub.Text = "Ride a Pet"
-sideSub.TextColor3 = Color3.fromRGB(130, 130, 160)
+sideSub.TextColor3 = Color3.fromRGB(180, 120, 60)
 sideSub.Font = Enum.Font.Gotham
 sideSub.TextSize = 12
 sideSub.TextXAlignment = Enum.TextXAlignment.Left
@@ -157,9 +155,9 @@ local function createSideTab(name, y)
 	local btn = Instance.new("TextButton")
 	btn.Size = UDim2.new(1, -20, 0, 36)
 	btn.Position = UDim2.new(0, 10, 0, y)
-	btn.BackgroundColor3 = Color3.fromRGB(14, 14, 20)
+	btn.BackgroundColor3 = Color3.fromRGB(8, 8, 10)
 	btn.Text = "  " .. name
-	btn.TextColor3 = Color3.fromRGB(200, 200, 220)
+	btn.TextColor3 = Color3.fromRGB(200, 140, 70)
 	btn.Font = Enum.Font.Gotham
 	btn.TextSize = 14
 	btn.TextXAlignment = Enum.TextXAlignment.Left
@@ -184,7 +182,7 @@ content.Parent = main
 
 local headerBar = Instance.new("Frame")
 headerBar.Size = UDim2.new(1, 0, 0, 40)
-headerBar.BackgroundColor3 = Color3.fromRGB(26, 26, 34)
+headerBar.BackgroundColor3 = Color3.fromRGB(18, 18, 20)
 headerBar.BorderSizePixel = 0
 headerBar.Parent = content
 local headerCorner = Instance.new("UICorner")
@@ -196,7 +194,7 @@ headerTitle.Size = UDim2.new(1, -50, 1, 0)
 headerTitle.Position = UDim2.new(0, 14, 0, 0)
 headerTitle.BackgroundTransparency = 1
 headerTitle.Text = "Controls & Eggs"
-headerTitle.TextColor3 = Color3.fromRGB(230, 230, 255)
+headerTitle.TextColor3 = Color3.fromRGB(255, 170, 60)
 headerTitle.Font = Enum.Font.GothamMedium
 headerTitle.TextSize = 15
 headerTitle.TextXAlignment = Enum.TextXAlignment.Left
@@ -205,9 +203,9 @@ headerTitle.Parent = headerBar
 local closeBtn = Instance.new("TextButton")
 closeBtn.Size = UDim2.new(0, 30, 0, 26)
 closeBtn.Position = UDim2.new(1, -38, 0.5, -13)
-closeBtn.BackgroundColor3 = Color3.fromRGB(55, 30, 35)
+closeBtn.BackgroundColor3 = Color3.fromRGB(40, 20, 10)
 closeBtn.Text = "×"
-closeBtn.TextColor3 = Color3.fromRGB(255, 180, 180)
+closeBtn.TextColor3 = Color3.fromRGB(255, 160, 80)
 closeBtn.Font = Enum.Font.GothamBold
 closeBtn.TextSize = 17
 closeBtn.AutoButtonColor = false
@@ -254,7 +252,7 @@ right.Parent = mainContent
 -- Rarity
 local rarityFrame = Instance.new("Frame")
 rarityFrame.Size = UDim2.new(1, 0, 0, 155)
-rarityFrame.BackgroundColor3 = Color3.fromRGB(26, 26, 34)
+rarityFrame.BackgroundColor3 = Color3.fromRGB(18, 18, 20)
 rarityFrame.BorderSizePixel = 0
 rarityFrame.Parent = right
 local rarityCorner = Instance.new("UICorner")
@@ -266,7 +264,7 @@ rarityTitle.Size = UDim2.new(1, -16, 0, 24)
 rarityTitle.Position = UDim2.new(0, 10, 0, 6)
 rarityTitle.BackgroundTransparency = 1
 rarityTitle.Text = "Rarities"
-rarityTitle.TextColor3 = Color3.fromRGB(200, 200, 230)
+rarityTitle.TextColor3 = Color3.fromRGB(255, 160, 50)
 rarityTitle.Font = Enum.Font.GothamMedium
 rarityTitle.TextSize = 14
 rarityTitle.TextXAlignment = Enum.TextXAlignment.Left
@@ -288,11 +286,11 @@ rarityList.Parent = rarityScroll
 local eggSearch = Instance.new("TextBox")
 eggSearch.Size = UDim2.new(1, 0, 0, 32)
 eggSearch.Position = UDim2.new(0, 0, 0, 165)
-eggSearch.BackgroundColor3 = Color3.fromRGB(32, 32, 42)
+eggSearch.BackgroundColor3 = Color3.fromRGB(22, 22, 24)
 eggSearch.PlaceholderText = "Search eggs..."
 eggSearch.Text = ""
-eggSearch.TextColor3 = Color3.fromRGB(240, 240, 255)
-eggSearch.PlaceholderColor3 = Color3.fromRGB(120, 120, 150)
+eggSearch.TextColor3 = Color3.fromRGB(255, 200, 140)
+eggSearch.PlaceholderColor3 = Color3.fromRGB(140, 100, 60)
 eggSearch.Font = Enum.Font.Gotham
 eggSearch.TextSize = 13
 eggSearch.ClearTextOnFocus = false
@@ -326,7 +324,7 @@ local hopTitle = Instance.new("TextLabel")
 hopTitle.Size = UDim2.new(1, 0, 0, 30)
 hopTitle.BackgroundTransparency = 1
 hopTitle.Text = "Server Hop"
-hopTitle.TextColor3 = Color3.fromRGB(240, 240, 255)
+hopTitle.TextColor3 = Color3.fromRGB(255, 170, 60)
 hopTitle.Font = Enum.Font.GothamBold
 hopTitle.TextSize = 18
 hopTitle.Parent = hopContent
@@ -336,7 +334,7 @@ hopDesc.Size = UDim2.new(1, 0, 0, 40)
 hopDesc.Position = UDim2.new(0, 0, 0, 35)
 hopDesc.BackgroundTransparency = 1
 hopDesc.Text = "Teleport to a different server of this place."
-hopDesc.TextColor3 = Color3.fromRGB(160, 160, 180)
+hopDesc.TextColor3 = Color3.fromRGB(180, 130, 80)
 hopDesc.Font = Enum.Font.Gotham
 hopDesc.TextSize = 14
 hopDesc.Parent = hopContent
@@ -346,9 +344,9 @@ hopDesc.Parent = hopContent
 local openBtn = Instance.new("TextButton")
 openBtn.Size = UDim2.new(0, 46, 0, 46)
 openBtn.Position = UDim2.new(0, 30, 0, 100)
-openBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 45)
+openBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 22)
 openBtn.Text = "DS"
-openBtn.TextColor3 = Color3.fromRGB(220, 220, 255)
+openBtn.TextColor3 = Color3.fromRGB(255, 160, 50)
 openBtn.Font = Enum.Font.GothamBold
 openBtn.TextSize = 14
 openBtn.Visible = true
@@ -359,26 +357,30 @@ local openCorner = Instance.new("UICorner")
 openCorner.CornerRadius = UDim.new(0, 11)
 openCorner.Parent = openBtn
 local openStroke = Instance.new("UIStroke")
-openStroke.Color = Color3.fromRGB(70, 70, 110)
-openStroke.Thickness = 1.2
+openStroke.Color = Color3.fromRGB(255, 140, 40)
+openStroke.Thickness = 1.4
 openStroke.Parent = openBtn
 
 local notif = Instance.new("Frame")
 notif.Size = UDim2.new(0, 250, 0, 32)
 notif.Position = UDim2.new(0.5, -125, 0, 16)
-notif.BackgroundColor3 = Color3.fromRGB(30, 30, 42)
+notif.BackgroundColor3 = Color3.fromRGB(20, 20, 22)
 notif.BorderSizePixel = 0
 notif.Visible = false
 notif.Parent = screenGui
 local notifCorner = Instance.new("UICorner")
 notifCorner.CornerRadius = UDim.new(0, 8)
 notifCorner.Parent = notif
+local notifStroke = Instance.new("UIStroke")
+notifStroke.Color = Color3.fromRGB(255, 140, 40)
+notifStroke.Thickness = 1
+notifStroke.Parent = notif
 
 local notifText = Instance.new("TextLabel")
 notifText.Size = UDim2.new(1, -10, 1, 0)
 notifText.Position = UDim2.new(0, 5, 0, 0)
 notifText.BackgroundTransparency = 1
-notifText.TextColor3 = Color3.fromRGB(230, 230, 255)
+notifText.TextColor3 = Color3.fromRGB(255, 200, 140)
 notifText.Font = Enum.Font.GothamMedium
 notifText.TextSize = 13
 notifText.TextXAlignment = Enum.TextXAlignment.Center
@@ -403,7 +405,7 @@ local function createCard(parent, titleText)
 	local card = Instance.new("Frame")
 	card.Size = UDim2.new(1, 0, 0, 0)
 	card.AutomaticSize = Enum.AutomaticSize.Y
-	card.BackgroundColor3 = Color3.fromRGB(26, 26, 34)
+	card.BackgroundColor3 = Color3.fromRGB(18, 18, 20)
 	card.BorderSizePixel = 0
 	card.Parent = parent
 
@@ -412,8 +414,9 @@ local function createCard(parent, titleText)
 	corner.Parent = card
 
 	local stroke = Instance.new("UIStroke")
-	stroke.Color = Color3.fromRGB(40, 40, 55)
+	stroke.Color = Color3.fromRGB(255, 140, 40)
 	stroke.Thickness = 1
+	stroke.Transparency = 0.7
 	stroke.Parent = card
 
 	local padding = Instance.new("UIPadding")
@@ -432,7 +435,7 @@ local function createCard(parent, titleText)
 	title.Size = UDim2.new(1, 0, 0, 18)
 	title.BackgroundTransparency = 1
 	title.Text = titleText
-	title.TextColor3 = Color3.fromRGB(160, 160, 190)
+	title.TextColor3 = Color3.fromRGB(255, 150, 50)
 	title.Font = Enum.Font.GothamMedium
 	title.TextSize = 12
 	title.TextXAlignment = Enum.TextXAlignment.Left
@@ -457,7 +460,7 @@ local function createButton(parent, text, color, callback)
 	c.Parent = btn
 	btn.MouseEnter:Connect(function()
 		TweenService:Create(btn, TweenInfo.new(0.15), {
-			BackgroundColor3 = Color3.new(math.min(color.R+0.08,1), math.min(color.G+0.08,1), math.min(color.B+0.08,1))
+			BackgroundColor3 = Color3.new(math.min(color.R+0.1,1), math.min(color.G+0.08,1), math.min(color.B+0.05,1))
 		}):Play()
 	end)
 	btn.MouseLeave:Connect(function()
@@ -470,7 +473,7 @@ end
 local function createSlider(parent, label, minV, maxV, default, callback)
 	local frame = Instance.new("Frame")
 	frame.Size = UDim2.new(1, 0, 0, 52)
-	frame.BackgroundColor3 = Color3.fromRGB(32, 32, 42)
+	frame.BackgroundColor3 = Color3.fromRGB(24, 24, 26)
 	frame.BorderSizePixel = 0
 	frame.Parent = parent
 	local c = Instance.new("UICorner")
@@ -482,7 +485,7 @@ local function createSlider(parent, label, minV, maxV, default, callback)
 	title.Position = UDim2.new(0, 10, 0, 5)
 	title.BackgroundTransparency = 1
 	title.Text = label
-	title.TextColor3 = Color3.fromRGB(190, 190, 220)
+	title.TextColor3 = Color3.fromRGB(220, 160, 90)
 	title.Font = Enum.Font.Gotham
 	title.TextSize = 12
 	title.TextXAlignment = Enum.TextXAlignment.Left
@@ -491,9 +494,9 @@ local function createSlider(parent, label, minV, maxV, default, callback)
 	local box = Instance.new("TextBox")
 	box.Size = UDim2.new(0, 46, 0, 16)
 	box.Position = UDim2.new(1, -54, 0, 5)
-	box.BackgroundColor3 = Color3.fromRGB(40, 40, 55)
+	box.BackgroundColor3 = Color3.fromRGB(35, 30, 25)
 	box.Text = tostring(default)
-	box.TextColor3 = Color3.fromRGB(255, 255, 255)
+	box.TextColor3 = Color3.fromRGB(255, 200, 120)
 	box.Font = Enum.Font.Gotham
 	box.TextSize = 12
 	box.ClearTextOnFocus = false
@@ -505,7 +508,7 @@ local function createSlider(parent, label, minV, maxV, default, callback)
 	local track = Instance.new("Frame")
 	track.Size = UDim2.new(1, -20, 0, 5)
 	track.Position = UDim2.new(0, 10, 0, 32)
-	track.BackgroundColor3 = Color3.fromRGB(50, 50, 70)
+	track.BackgroundColor3 = Color3.fromRGB(40, 35, 30)
 	track.BorderSizePixel = 0
 	track.Parent = frame
 	local tc = Instance.new("UICorner")
@@ -514,7 +517,7 @@ local function createSlider(parent, label, minV, maxV, default, callback)
 
 	local fill = Instance.new("Frame")
 	fill.Size = UDim2.new(0, 0, 1, 0)
-	fill.BackgroundColor3 = Color3.fromRGB(90, 130, 255)
+	fill.BackgroundColor3 = Color3.fromRGB(255, 140, 40)
 	fill.BorderSizePixel = 0
 	fill.Parent = track
 	local fc = Instance.new("UICorner")
@@ -523,7 +526,7 @@ local function createSlider(parent, label, minV, maxV, default, callback)
 
 	local knob = Instance.new("TextButton")
 	knob.Size = UDim2.new(0, 13, 0, 13)
-	knob.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	knob.BackgroundColor3 = Color3.fromRGB(255, 180, 80)
 	knob.Text = ""
 	knob.AutoButtonColor = false
 	knob.Parent = track
@@ -569,7 +572,7 @@ end
 local function createToggle(parent, text, default, callback)
 	local frame = Instance.new("Frame")
 	frame.Size = UDim2.new(1, 0, 0, 34)
-	frame.BackgroundColor3 = Color3.fromRGB(32, 32, 42)
+	frame.BackgroundColor3 = Color3.fromRGB(24, 24, 26)
 	frame.BorderSizePixel = 0
 	frame.Parent = parent
 	local c = Instance.new("UICorner")
@@ -581,7 +584,7 @@ local function createToggle(parent, text, default, callback)
 	label.Position = UDim2.new(0, 10, 0, 0)
 	label.BackgroundTransparency = 1
 	label.Text = text
-	label.TextColor3 = Color3.fromRGB(220, 220, 240)
+	label.TextColor3 = Color3.fromRGB(230, 180, 110)
 	label.Font = Enum.Font.Gotham
 	label.TextSize = 13
 	label.TextXAlignment = Enum.TextXAlignment.Left
@@ -590,7 +593,7 @@ local function createToggle(parent, text, default, callback)
 	local toggle = Instance.new("TextButton")
 	toggle.Size = UDim2.new(0, 40, 0, 20)
 	toggle.Position = UDim2.new(1, -48, 0.5, -10)
-	toggle.BackgroundColor3 = default and Color3.fromRGB(50, 140, 80) or Color3.fromRGB(60, 60, 75)
+	toggle.BackgroundColor3 = default and Color3.fromRGB(255, 140, 40) or Color3.fromRGB(45, 40, 35)
 	toggle.Text = ""
 	toggle.AutoButtonColor = false
 	toggle.Parent = frame
@@ -601,7 +604,7 @@ local function createToggle(parent, text, default, callback)
 	local knob = Instance.new("Frame")
 	knob.Size = UDim2.new(0, 14, 0, 14)
 	knob.Position = default and UDim2.new(1, -17, 0.5, -7) or UDim2.new(0, 3, 0.5, -7)
-	knob.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	knob.BackgroundColor3 = Color3.fromRGB(255, 220, 160)
 	knob.BorderSizePixel = 0
 	knob.Parent = toggle
 	local kc = Instance.new("UICorner")
@@ -612,7 +615,7 @@ local function createToggle(parent, text, default, callback)
 	toggle.MouseButton1Click:Connect(function()
 		state = not state
 		TweenService:Create(toggle, TweenInfo.new(0.18), {
-			BackgroundColor3 = state and Color3.fromRGB(50, 140, 80) or Color3.fromRGB(60, 60, 75)
+			BackgroundColor3 = state and Color3.fromRGB(255, 140, 40) or Color3.fromRGB(45, 40, 35)
 		}):Play()
 		TweenService:Create(knob, TweenInfo.new(0.18), {
 			Position = state and UDim2.new(1, -17, 0.5, -7) or UDim2.new(0, 3, 0.5, -7)
@@ -623,10 +626,9 @@ local function createToggle(parent, text, default, callback)
 	return frame
 end
 -------------------------------------------------
--- TELEPORT HELPERS
+-- TELEPORT HELPERS (Own base only)
 -------------------------------------------------
-local function getBase(targetPlayer)
-	targetPlayer = targetPlayer or player
+local function getBase()
 	local plots = workspace:FindFirstChild("Plots")
 	if not plots then return nil end
 
@@ -637,14 +639,14 @@ local function getBase(targetPlayer)
 				local ownerValue = data:FindFirstChild("Owner")
 				if ownerValue and ownerValue:IsA("ObjectValue") then
 					local owner = ownerValue.Value
-					if typeof(owner) == "string" and owner == targetPlayer.Name then
+					if typeof(owner) == "string" and owner == player.Name then
 						return plot:FindFirstChild("Baseplate")
 							or plot:FindFirstChild("Base")
 							or plot:FindFirstChildWhichIsA("BasePart")
 							or plot:FindFirstChild("Spawn")
 							or plot.PrimaryPart
 					end
-					if typeof(owner) == "Instance" and owner:IsA("Player") and owner == targetPlayer then
+					if typeof(owner) == "Instance" and owner:IsA("Player") and owner == player then
 						return plot:FindFirstChild("Baseplate")
 							or plot:FindFirstChild("Base")
 							or plot:FindFirstChildWhichIsA("BasePart")
@@ -675,10 +677,10 @@ local function teleportTo(target)
 end
 
 local function tweenToBase()
-	local base = getBase(selectedPlayer)
+	local base = getBase()
 	local char = player.Character
 	if not base or not char then
-		notify(selectedPlayer and ("Base of " .. selectedPlayer.Name .. " not found") or "Your base not found")
+		notify("Your base not found")
 		return
 	end
 	local hrp = char:FindFirstChild("HumanoidRootPart")
@@ -686,14 +688,14 @@ local function tweenToBase()
 	TweenService:Create(hrp, TweenInfo.new(Settings.TweenDuration, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
 		CFrame = base:GetPivot() * CFrame.new(0, 5, 0)
 	}):Play()
-	notify(selectedPlayer and ("Tweening to " .. selectedPlayer.Name .. "'s base") or "Tweening to your base...")
+	notify("Tweening to your base...")
 end
 
 local function multiStepToBase()
-	local base = getBase(selectedPlayer)
+	local base = getBase()
 	local char = player.Character
 	if not base or not char then
-		notify(selectedPlayer and ("Base of " .. selectedPlayer.Name .. " not found") or "Your base not found")
+		notify("Your base not found")
 		return
 	end
 	local hrp = char:FindFirstChild("HumanoidRootPart")
@@ -703,7 +705,7 @@ local function multiStepToBase()
 	local rayParams = RaycastParams.new()
 	rayParams.FilterType = Enum.RaycastFilterType.Exclude
 	rayParams.FilterDescendantsInstances = {char}
-	notify(selectedPlayer and ("Multi-step to " .. selectedPlayer.Name) or "Multi-step started")
+	notify("Multi-step started")
 	for i = 1, Settings.MultiStepSteps do
 		local pos = start:Lerp(goal, i / Settings.MultiStepSteps)
 		local ray = workspace:Raycast(pos + Vector3.new(0, 5, 0), Vector3.new(0, -20, 0), rayParams)
@@ -715,116 +717,6 @@ local function multiStepToBase()
 	end
 	notify("Multi-step finished")
 end
--------------------------------------------------
--- PLAYER SELECTOR
--------------------------------------------------
-local playerFrame = Instance.new("Frame")
-playerFrame.Size = UDim2.new(1, 0, 0, 140)
-playerFrame.BackgroundColor3 = Color3.fromRGB(32, 32, 42)
-playerFrame.BorderSizePixel = 0
-local playerCorner = Instance.new("UICorner")
-playerCorner.CornerRadius = UDim.new(0, 8)
-playerCorner.Parent = playerFrame
-
-local playerTitle = Instance.new("TextLabel")
-playerTitle.Size = UDim2.new(1, -90, 0, 22)
-playerTitle.Position = UDim2.new(0, 8, 0, 4)
-playerTitle.BackgroundTransparency = 1
-playerTitle.Text = "Select Player Base"
-playerTitle.TextColor3 = Color3.fromRGB(190, 190, 220)
-playerTitle.Font = Enum.Font.GothamMedium
-playerTitle.TextSize = 12
-playerTitle.TextXAlignment = Enum.TextXAlignment.Left
-playerTitle.Parent = playerFrame
-
-local refreshPlayersBtn = Instance.new("TextButton")
-refreshPlayersBtn.Size = UDim2.new(0, 70, 0, 20)
-refreshPlayersBtn.Position = UDim2.new(1, -78, 0, 5)
-refreshPlayersBtn.BackgroundColor3 = Color3.fromRGB(50, 70, 120)
-refreshPlayersBtn.Text = "Refresh"
-refreshPlayersBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-refreshPlayersBtn.Font = Enum.Font.GothamMedium
-refreshPlayersBtn.TextSize = 11
-refreshPlayersBtn.AutoButtonColor = false
-refreshPlayersBtn.Parent = playerFrame
-local rpCorner = Instance.new("UICorner")
-rpCorner.CornerRadius = UDim.new(0, 6)
-rpCorner.Parent = refreshPlayersBtn
-
-local playerScroll = Instance.new("ScrollingFrame")
-playerScroll.Size = UDim2.new(1, -10, 1, -30)
-playerScroll.Position = UDim2.new(0, 5, 0, 26)
-playerScroll.BackgroundTransparency = 1
-playerScroll.BorderSizePixel = 0
-playerScroll.ScrollBarThickness = 3
-playerScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
-playerScroll.Parent = playerFrame
-local playerList = Instance.new("UIListLayout")
-playerList.Padding = UDim.new(0, 4)
-playerList.Parent = playerScroll
-
-local function refreshPlayerList()
-	for _, btn in pairs(playerButtons) do
-		btn:Destroy()
-	end
-	playerButtons = {}
-
-	local selfBtn = Instance.new("TextButton")
-	selfBtn.Size = UDim2.new(1, 0, 0, 26)
-	selfBtn.BackgroundColor3 = selectedPlayer == nil and Color3.fromRGB(50, 90, 160) or Color3.fromRGB(40, 40, 55)
-	selfBtn.Text = "  Myself (Your Base)"
-	selfBtn.TextColor3 = Color3.fromRGB(240, 240, 255)
-	selfBtn.Font = Enum.Font.Gotham
-	selfBtn.TextSize = 12
-	selfBtn.TextXAlignment = Enum.TextXAlignment.Left
-	selfBtn.AutoButtonColor = false
-	selfBtn.Parent = playerScroll
-	local sc = Instance.new("UICorner")
-	sc.CornerRadius = UDim.new(0, 6)
-	sc.Parent = selfBtn
-	selfBtn.MouseButton1Click:Connect(function()
-		selectedPlayer = nil
-		refreshPlayerList()
-		notify("Selected: Your own base")
-	end)
-	playerButtons["self"] = selfBtn
-
-	for _, plr in ipairs(Players:GetPlayers()) do
-		if plr ~= player then
-			local btn = Instance.new("TextButton")
-			btn.Size = UDim2.new(1, 0, 0, 26)
-			btn.BackgroundColor3 = selectedPlayer == plr and Color3.fromRGB(50, 90, 160) or Color3.fromRGB(40, 40, 55)
-			btn.Text = "  " .. plr.Name
-			btn.TextColor3 = Color3.fromRGB(240, 240, 255)
-			btn.Font = Enum.Font.Gotham
-			btn.TextSize = 12
-			btn.TextXAlignment = Enum.TextXAlignment.Left
-			btn.AutoButtonColor = false
-			btn.Parent = playerScroll
-			local c = Instance.new("UICorner")
-			c.CornerRadius = UDim.new(0, 6)
-			c.Parent = btn
-			btn.MouseButton1Click:Connect(function()
-				selectedPlayer = plr
-				refreshPlayerList()
-				notify("Selected: " .. plr.Name)
-			end)
-			playerButtons[plr.Name] = btn
-		end
-	end
-end
-
-refreshPlayersBtn.MouseButton1Click:Connect(function()
-	refreshPlayerList()
-	notify("Player list refreshed")
-end)
-Players.PlayerAdded:Connect(refreshPlayerList)
-Players.PlayerRemoving:Connect(function(plr)
-	if selectedPlayer == plr then
-		selectedPlayer = nil
-	end
-	refreshPlayerList()
-end)
 -------------------------------------------------
 -- EGGS
 -------------------------------------------------
@@ -856,7 +748,7 @@ local function refreshEggs()
 		if rarity then
 			if currentSearch == "" or egg.Name:lower():find(currentSearch:lower(), 1, true) then
 				count += 1
-				local color = RarityColors[rarity] or Color3.fromRGB(40, 40, 55)
+				local color = RarityColors[rarity] or Color3.fromRGB(60, 50, 40)
 				local btn = createButton(eggScroll, egg.Name, color, function()
 					teleportTo(egg)
 					notify("Teleported to " .. egg.Name)
@@ -882,7 +774,7 @@ local function updateRarityButtons()
 	for _, rarity in ipairs(Rarities) do
 		local btn = Instance.new("TextButton")
 		btn.Size = UDim2.new(1, 0, 0, 28)
-		btn.BackgroundColor3 = Color3.fromRGB(32, 32, 42)
+		btn.BackgroundColor3 = Color3.fromRGB(24, 24, 26)
 		btn.Text = ""
 		btn.AutoButtonColor = false
 		btn.Parent = rarityScroll
@@ -906,7 +798,7 @@ local function updateRarityButtons()
 		label.Position = UDim2.new(0, 16, 0, 0)
 		label.BackgroundTransparency = 1
 		label.Text = rarity
-		label.TextColor3 = Color3.fromRGB(230, 230, 255)
+		label.TextColor3 = Color3.fromRGB(230, 180, 110)
 		label.Font = Enum.Font.Gotham
 		label.TextSize = 13
 		label.TextXAlignment = Enum.TextXAlignment.Left
@@ -923,13 +815,13 @@ local function updateRarityButtons()
 end
 updateRarityButtons()
 -------------------------------------------------
--- CONTROLS (CARD LAYOUT)
+-- CONTROLS (CARD LAYOUT - Black & Orange)
 -------------------------------------------------
 
 -- MOVEMENT CARD
 local movementCard = createCard(left, "MOVEMENT")
 
-createButton(movementCard, "Instant Return to Base", Color3.fromRGB(30, 100, 70), function()
+createButton(movementCard, "Instant Return to Base", Color3.fromRGB(255, 120, 30), function()
 	local base = getBase()
 	if base then
 		teleportTo(base)
@@ -939,14 +831,14 @@ createButton(movementCard, "Instant Return to Base", Color3.fromRGB(30, 100, 70)
 	end
 end)
 
-createButton(movementCard, "Multi-Step (Grounded)", Color3.fromRGB(90, 55, 140), function()
+createButton(movementCard, "Multi-Step (Grounded)", Color3.fromRGB(200, 90, 20), function()
 	multiStepToBase()
 end)
 createSlider(movementCard, "Multi-Step Delay (s)", 0.2, 1.2, Settings.MultiStepDelay, function(v)
 	Settings.MultiStepDelay = v
 end)
 
-createButton(movementCard, "Smooth Tween to Base", Color3.fromRGB(40, 85, 150), function()
+createButton(movementCard, "Smooth Tween to Base", Color3.fromRGB(255, 140, 40), function()
 	tweenToBase()
 end)
 createSlider(movementCard, "Tween Speed (s)", 2, 12, Settings.TweenDuration, function(v)
@@ -955,8 +847,6 @@ end)
 
 -- OPTIONS CARD
 local optionsCard = createCard(left, "OPTIONS")
-
-playerFrame.Parent = optionsCard
 
 createToggle(optionsCard, "Auto Refresh", Settings.AutoRefreshEnabled, function(state)
 	autoRefreshEnabled = state
@@ -971,11 +861,11 @@ createToggle(optionsCard, "Egg ESP", Settings.ESPEnabled, function(state)
 end)
 
 -- Extra buttons
-createButton(eggScroll, "Refresh Eggs", Color3.fromRGB(45, 45, 70), function()
+createButton(eggScroll, "Refresh Eggs", Color3.fromRGB(50, 40, 30), function()
 	refreshEggs()
 end)
 
-createButton(hopContent, "Server Hop Now", Color3.fromRGB(90, 50, 160), function()
+createButton(hopContent, "Server Hop Now", Color3.fromRGB(255, 120, 30), function()
 	notify("Server hopping...")
 	TeleportService:Teleport(game.PlaceId, player)
 end).Position = UDim2.new(0, 0, 0, 90)
@@ -988,11 +878,11 @@ local function setTab(name)
 	hopContent.Visible = name == "Server Hop"
 	for tabName, btn in pairs(tabButtons) do
 		if tabName == name then
-			btn.BackgroundColor3 = Color3.fromRGB(40, 40, 55)
-			btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+			btn.BackgroundColor3 = Color3.fromRGB(30, 22, 15)
+			btn.TextColor3 = Color3.fromRGB(255, 170, 60)
 		else
-			btn.BackgroundColor3 = Color3.fromRGB(14, 14, 20)
-			btn.TextColor3 = Color3.fromRGB(180, 180, 200)
+			btn.BackgroundColor3 = Color3.fromRGB(8, 8, 10)
+			btn.TextColor3 = Color3.fromRGB(180, 120, 60)
 		end
 	end
 end
@@ -1122,7 +1012,7 @@ task.spawn(function()
 	end
 end)
 -------------------------------------------------
--- AUTO REFRESH + PLAYER LIST
+-- AUTO REFRESH
 -------------------------------------------------
 task.spawn(function()
 	while task.wait(Settings.AutoRefreshInterval) do
@@ -1132,7 +1022,6 @@ task.spawn(function()
 	end
 end)
 
-refreshPlayerList()
 refreshEggs()
 notify("Divine Soul loaded")
-print("Divine Soul loaded - Card Layout")
+print("Divine Soul loaded - Black & Orange")
