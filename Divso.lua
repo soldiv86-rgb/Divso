@@ -1,4 +1,4 @@
--- Egg Manager (Ride a Pet) - Exact Rarity Order + Filterable Semi-Auto Farm
+-- Egg Manager (Ride a Pet) - Fixed Refresh + Exact Rarities
 
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
@@ -14,16 +14,16 @@ local MULTISTEP_DELAY = 0.45
 local MULTISTEP_STEPS = 14
 local AUTO_KEY = Enum.KeyCode.F
 
--- Exact rarity order (highest first)
+-- Exact rarity priority
 local RARITY_PRIORITY = {
-	["Ethereal"] = 80,
-	["Divine"]   = 70,
-	["Mythic"]   = 60,
-	["Legendary"]= 50,
-	["Epic"]     = 40,
-	["Rare"]     = 30,
-	["Uncommon"] = 20,
-	["Common"]   = 10,
+	["Ethereal"]  = 80,
+	["Divine"]    = 70,
+	["Mythic"]    = 60,
+	["Legendary"] = 50,
+	["Epic"]      = 40,
+	["Rare"]      = 30,
+	["Uncommon"]  = 20,
+	["Common"]    = 10,
 }
 
 -- State
@@ -366,15 +366,27 @@ local function multiStepToBase()
 end
 
 -------------------------------------------------
--- Rarity Score
+-- Better Egg Detection
 -------------------------------------------------
+local function isEgg(obj)
+	if not obj then return false end
+	if obj:IsA("Model") or obj:IsA("BasePart") then
+		-- Accept almost anything that looks like an egg
+		if obj:FindFirstChild("EggBase") or obj.PrimaryPart or obj.Name:lower():find("egg") then
+			return true
+		end
+		-- Also accept if it has any BasePart
+		if obj:FindFirstChildWhichIsA("BasePart", true) then
+			return true
+		end
+	end
+	return false
+end
+
 local function getRarityScore(rarityName)
 	return RARITY_PRIORITY[rarityName] or 5
 end
 
--------------------------------------------------
--- Rebuild filtered list
--------------------------------------------------
 local function rebuildFilteredList()
 	filteredEggs = {}
 	for _, data in ipairs(sortedEggs) do
@@ -383,35 +395,37 @@ local function rebuildFilteredList()
 		end
 	end
 	currentAutoIndex = 1
-	print("Filter → " .. #filteredEggs .. " eggs ready for auto farm")
+	print("Filter active → " .. #filteredEggs .. " eggs")
 end
 
--------------------------------------------------
--- Refresh Eggs
--------------------------------------------------
 local function refreshEggs()
-	-- Clear egg buttons
+	print("=== Refreshing Eggs ===")
+
+	-- Clear right panel egg buttons
 	for _, child in ipairs(rightPanel:GetChildren()) do
 		if child:IsA("TextButton") and child.Text:find("•") then
 			child:Destroy()
 		end
 	end
 
-	-- Clear old filter buttons
+	-- Clear old rarity filter buttons
 	for _, btn in pairs(rarityButtons) do
-		btn:Destroy()
+		if btn and btn.Parent then
+			btn:Destroy()
+		end
 	end
 	rarityButtons = {}
 
 	local eggSpawns = workspace:FindFirstChild("EggSpawns")
 	if not eggSpawns then
-		print("workspace.EggSpawns not found")
+		warn("workspace.EggSpawns not found!")
 		return
 	end
 
 	sortedEggs = {}
 	local unique = {}
 	local foundRarities = {}
+	local totalFound = 0
 
 	for _, rarityFolder in ipairs(eggSpawns:GetChildren()) do
 		if rarityFolder:IsA("Folder") or rarityFolder:IsA("Model") then
@@ -419,21 +433,39 @@ local function refreshEggs()
 			foundRarities[rarityName] = true
 			local score = getRarityScore(rarityName)
 
-			for _, egg in ipairs(rarityFolder:GetChildren()) do
-				if (egg:IsA("Model") or egg:IsA("BasePart")) and not unique[egg.Name] then
-					unique[egg.Name] = true
+			-- Look deeper (GetDescendants) in case eggs are nested
+			for _, obj in ipairs(rarityFolder:GetDescendants()) do
+				if isEgg(obj) and not unique[obj.Name] then
+					unique[obj.Name] = true
 					table.insert(sortedEggs, {
-						egg = egg,
-						name = egg.Name,
+						egg = obj,
+						name = obj.Name,
 						rarity = rarityName,
 						score = score
 					})
+					totalFound += 1
+				end
+			end
+
+			-- Also check direct children
+			for _, obj in ipairs(rarityFolder:GetChildren()) do
+				if isEgg(obj) and not unique[obj.Name] then
+					unique[obj.Name] = true
+					table.insert(sortedEggs, {
+						egg = obj,
+						name = obj.Name,
+						rarity = rarityName,
+						score = score
+					})
+					totalFound += 1
 				end
 			end
 		end
 	end
 
-	-- Sort highest → lowest
+	print("Found " .. totalFound .. " unique eggs")
+
+	-- Sort
 	table.sort(sortedEggs, function(a, b)
 		if a.score == b.score then
 			return a.name < b.name
@@ -441,7 +473,7 @@ local function refreshEggs()
 		return a.score > b.score
 	end)
 
-	-- Create egg buttons
+	-- Create buttons
 	for _, data in ipairs(sortedEggs) do
 		local color = Color3.fromRGB(38, 38, 52)
 
@@ -468,10 +500,10 @@ local function refreshEggs()
 		end)
 	end
 
-	-- Create filter toggles (ordered correctly)
-	local orderedRarities = {"Ethereal", "Divine", "Mythic", "Legendary", "Epic", "Rare", "Uncommon", "Common"}
+	-- Create filter toggles in correct order
+	local ordered = {"Ethereal", "Divine", "Mythic", "Legendary", "Epic", "Rare", "Uncommon", "Common"}
 
-	for _, rarityName in ipairs(orderedRarities) do
+	for _, rarityName in ipairs(ordered) do
 		if foundRarities[rarityName] then
 			if enabledRarities[rarityName] == nil then
 				enabledRarities[rarityName] = true
@@ -493,7 +525,7 @@ local function refreshEggs()
 	end
 
 	rebuildFilteredList()
-	print("Loaded " .. #sortedEggs .. " eggs | Rarities locked to game order")
+	print("Refresh complete")
 end
 
 -------------------------------------------------
@@ -503,7 +535,7 @@ local function doAutoTeleport()
 	if #filteredEggs == 0 then
 		refreshEggs()
 		if #filteredEggs == 0 then
-			print("No eggs match your rarity filter")
+			print("No eggs match your current filter")
 			return
 		end
 	end
@@ -561,7 +593,7 @@ autoBtn = createButton(leftPanel, "Semi-Auto Farm: OFF  (F)", Color3.fromRGB(90,
 	if autoFarmEnabled then
 		autoBtn.Text = "Semi-Auto Farm: ON   (F)"
 		autoBtn.BackgroundColor3 = Color3.fromRGB(40, 120, 60)
-		print("Semi-Auto ON — press F (only enabled rarities)")
+		print("Semi-Auto ON")
 	else
 		autoBtn.Text = "Semi-Auto Farm: OFF  (F)"
 		autoBtn.BackgroundColor3 = Color3.fromRGB(90, 40, 40)
@@ -569,7 +601,6 @@ autoBtn = createButton(leftPanel, "Semi-Auto Farm: OFF  (F)", Color3.fromRGB(90,
 	end
 end)
 
--- Filter header
 local filterLabel = Instance.new("TextLabel")
 filterLabel.Size = UDim2.new(1, 0, 0, 22)
 filterLabel.BackgroundTransparency = 1
@@ -628,15 +659,15 @@ local function createESP(egg)
 end
 
 task.spawn(function()
-	while task.wait(0.75) do
+	while task.wait(0.8) do
 		local eggSpawns = workspace:FindFirstChild("EggSpawns")
 		if not eggSpawns then continue end
 
 		for _, esp in ipairs(ESPFolder:GetChildren()) do
 			local stillExists = false
 			for _, rarityFolder in ipairs(eggSpawns:GetChildren()) do
-				for _, egg in ipairs(rarityFolder:GetChildren()) do
-					if esp.Name:find(egg:GetDebugId()) then
+				for _, obj in ipairs(rarityFolder:GetDescendants()) do
+					if esp.Name:find(obj:GetDebugId()) then
 						stillExists = true
 						break
 					end
@@ -647,9 +678,9 @@ task.spawn(function()
 		end
 
 		for _, rarityFolder in ipairs(eggSpawns:GetChildren()) do
-			for _, egg in ipairs(rarityFolder:GetChildren()) do
-				if egg:IsA("Model") or egg:IsA("BasePart") then
-					createESP(egg)
+			for _, obj in ipairs(rarityFolder:GetDescendants()) do
+				if isEgg(obj) then
+					createESP(obj)
 				end
 			end
 		end
@@ -658,4 +689,4 @@ end)
 
 -- Start
 refreshEggs()
-print("Egg Manager ready | Exact order: Ethereal > Divine > Mythic > Legendary > Epic > Rare > Uncommon > Common")
+print("Egg Manager loaded - Fixed Refresh")
