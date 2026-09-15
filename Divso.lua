@@ -1,4 +1,4 @@
--- Egg Manager - Modern UI (inspired by the style you showed)
+-- Divine Soul - Ride a Pet
 
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
@@ -9,31 +9,66 @@ local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
 -------------------------------------------------
--- SETTINGS
+-- SETTINGS + SAVE SYSTEM
 -------------------------------------------------
+local SAVE_FILE = "DivineSoul_RideAPet_Settings.json"
+
 local Settings = {
-	TweenDuration = 5.0,
-	MultiStepDelay = 0.45,
+	TweenDuration = 8.0,
+	MultiStepDelay = 0.8,
 	MultiStepSteps = 14,
-	AutoRefreshInterval = 12,
+	AutoRefreshInterval = 5,
 	NotificationDuration = 2.6,
+	ESPEnabled = true,
+	AutoRefreshEnabled = false,
 }
+
+-- Load saved settings
+local function loadSettings()
+	if isfile and readfile and isfile(SAVE_FILE) then
+		local success, data = pcall(function()
+			return game:GetService("HttpService"):JSONDecode(readfile(SAVE_FILE))
+		end)
+		if success and type(data) == "table" then
+			for k, v in pairs(data) do
+				if Settings[k] ~= nil then
+					Settings[k] = v
+				end
+			end
+			print("Settings loaded")
+		end
+	end
+end
+
+-- Save settings
+local function saveSettings()
+	if writefile then
+		local success, encoded = pcall(function()
+			return game:GetService("HttpService"):JSONEncode(Settings)
+		end)
+		if success then
+			writefile(SAVE_FILE, encoded)
+		end
+	end
+end
+
+loadSettings()
 
 -------------------------------------------------
 -- STATE
 -------------------------------------------------
-local autoRefreshEnabled = false
-local espEnabled = true
 local isOpen = true
 local currentSearch = ""
 local eggButtons = {}
 local espObjects = {}
+local espEnabled = Settings.ESPEnabled
+local autoRefreshEnabled = Settings.AutoRefreshEnabled
 
 -------------------------------------------------
 -- Cleanup
 -------------------------------------------------
-if playerGui:FindFirstChild("EggTeleportUI") then
-	playerGui.EggTeleportUI:Destroy()
+if playerGui:FindFirstChild("DivineSoulUI") then
+	playerGui.DivineSoulUI:Destroy()
 end
 if CoreGui:FindFirstChild("EggSizeESP") then
 	CoreGui.EggSizeESP:Destroy()
@@ -43,7 +78,7 @@ end
 -- MAIN UI
 -------------------------------------------------
 local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "EggTeleportUI"
+screenGui.Name = "DivineSoulUI"
 screenGui.ResetOnSpawn = false
 screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 screenGui.Parent = playerGui
@@ -86,17 +121,28 @@ sideCover.BackgroundColor3 = Color3.fromRGB(16, 16, 22)
 sideCover.BorderSizePixel = 0
 sideCover.Parent = sidebar
 
--- Title in sidebar
+-- Title
 local sideTitle = Instance.new("TextLabel")
 sideTitle.Size = UDim2.new(1, -20, 0, 50)
 sideTitle.Position = UDim2.new(0, 12, 0, 8)
 sideTitle.BackgroundTransparency = 1
-sideTitle.Text = "Egg Manager"
+sideTitle.Text = "Divine Soul"
 sideTitle.TextColor3 = Color3.fromRGB(240, 240, 255)
 sideTitle.Font = Enum.Font.GothamBold
 sideTitle.TextSize = 16
 sideTitle.TextXAlignment = Enum.TextXAlignment.Left
 sideTitle.Parent = sidebar
+
+local sideSub = Instance.new("TextLabel")
+sideSub.Size = UDim2.new(1, -20, 0, 18)
+sideSub.Position = UDim2.new(0, 12, 0, 36)
+sideSub.BackgroundTransparency = 1
+sideSub.Text = "Ride a Pet"
+sideSub.TextColor3 = Color3.fromRGB(140, 140, 170)
+sideSub.Font = Enum.Font.Gotham
+sideSub.TextSize = 12
+sideSub.TextXAlignment = Enum.TextXAlignment.Left
+sideSub.Parent = sidebar
 
 -- Content Area
 local content = Instance.new("Frame")
@@ -106,7 +152,7 @@ content.Position = UDim2.new(0, 165, 0, 10)
 content.BackgroundTransparency = 1
 content.Parent = main
 
--- Header bar inside content
+-- Header bar
 local headerBar = Instance.new("Frame")
 headerBar.Size = UDim2.new(1, 0, 0, 42)
 headerBar.BackgroundColor3 = Color3.fromRGB(28, 28, 36)
@@ -128,20 +174,20 @@ headerTitle.TextSize = 15
 headerTitle.TextXAlignment = Enum.TextXAlignment.Left
 headerTitle.Parent = headerBar
 
--- Close button
+-- Close button (DS)
 local closeBtn = Instance.new("TextButton")
-closeBtn.Size = UDim2.new(0, 30, 0, 30)
-closeBtn.Position = UDim2.new(1, -36, 0.5, -15)
+closeBtn.Size = UDim2.new(0, 34, 0, 28)
+closeBtn.Position = UDim2.new(1, -42, 0.5, -14)
 closeBtn.BackgroundColor3 = Color3.fromRGB(50, 30, 35)
-closeBtn.Text = "×"
-closeBtn.TextColor3 = Color3.fromRGB(255, 170, 170)
+closeBtn.Text = "DS"
+closeBtn.TextColor3 = Color3.fromRGB(255, 180, 180)
 closeBtn.Font = Enum.Font.GothamBold
-closeBtn.TextSize = 18
+closeBtn.TextSize = 13
 closeBtn.AutoButtonColor = false
 closeBtn.Parent = headerBar
 
 local closeCorner = Instance.new("UICorner")
-closeCorner.CornerRadius = UDim.new(0, 8)
+closeCorner.CornerRadius = UDim.new(0, 7)
 closeCorner.Parent = closeBtn
 
 -- Open button (draggable)
@@ -149,10 +195,10 @@ local openBtn = Instance.new("TextButton")
 openBtn.Size = UDim2.new(0, 48, 0, 48)
 openBtn.Position = UDim2.new(0, 20, 0.5, -24)
 openBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 45)
-openBtn.Text = "Egg"
+openBtn.Text = "DS"
 openBtn.TextColor3 = Color3.fromRGB(220, 220, 255)
 openBtn.Font = Enum.Font.GothamBold
-openBtn.TextSize = 13
+openBtn.TextSize = 14
 openBtn.Visible = false
 openBtn.AutoButtonColor = false
 openBtn.Active = true
@@ -196,7 +242,7 @@ notifText.TextXAlignment = Enum.TextXAlignment.Center
 notifText.Parent = notif
 
 -------------------------------------------------
--- Dragging
+-- Dragging (Main)
 -------------------------------------------------
 local dragging, dragStart, startPos = false, nil, nil
 
@@ -221,7 +267,9 @@ UserInputService.InputChanged:Connect(function(input)
 	end
 end)
 
--- Open button drag
+-------------------------------------------------
+-- Dragging (Open Button)
+-------------------------------------------------
 local openDragging = false
 local openDragStart, openStartPos
 
@@ -387,6 +435,7 @@ local function createToggle(parent, text, default, callback)
 			Position = state and UDim2.new(1, -19, 0.5, -8) or UDim2.new(0, 3, 0.5, -8)
 		}):Play()
 		callback(state)
+		saveSettings()
 	end)
 
 	return frame
@@ -499,6 +548,7 @@ local function createSlider(parent, labelText, minV, maxV, default, callback)
 		knob.Position = UDim2.new(a, -7, 0.5, -7)
 		valueBox.Text = tostring(val)
 		callback(val)
+		saveSettings()
 	end
 
 	knob.InputBegan:Connect(function(i)
@@ -706,8 +756,12 @@ end)
 -- Build Controls
 -------------------------------------------------
 createSection(leftContent, "MOVEMENT")
-createSlider(leftContent, "Tween Speed (s)", 2, 12, Settings.TweenDuration, function(v) Settings.TweenDuration = v end)
-createSlider(leftContent, "Multi-Step Delay (s)", 0.2, 1.2, Settings.MultiStepDelay, function(v) Settings.MultiStepDelay = v end)
+createSlider(leftContent, "Tween Speed (s)", 2, 12, Settings.TweenDuration, function(v)
+	Settings.TweenDuration = v
+end)
+createSlider(leftContent, "Multi-Step Delay (s)", 0.2, 1.2, Settings.MultiStepDelay, function(v)
+	Settings.MultiStepDelay = v
+end)
 
 createButton(leftContent, "Instant Return to Base", Color3.fromRGB(30, 100, 70), function()
 	local base = getBase()
@@ -723,14 +777,16 @@ createButton(leftContent, "Multi-Step (Grounded)", Color3.fromRGB(90, 55, 140), 
 end)
 
 createSection(leftContent, "OPTIONS")
-createToggle(leftContent, "ESP", true, function(state)
+createToggle(leftContent, "ESP", Settings.ESPEnabled, function(state)
 	espEnabled = state
+	Settings.ESPEnabled = state
 	if not state then clearAllESP() end
 	notify(state and "ESP enabled" or "ESP disabled")
 end)
 
-createToggle(leftContent, "Auto Refresh", false, function(state)
+createToggle(leftContent, "Auto Refresh", Settings.AutoRefreshEnabled, function(state)
 	autoRefreshEnabled = state
+	Settings.AutoRefreshEnabled = state
 	notify(state and "Auto refresh enabled" or "Auto refresh disabled")
 end)
 
@@ -745,6 +801,7 @@ closeBtn.MouseButton1Click:Connect(function()
 	main.Visible = false
 	openBtn.Visible = true
 	isOpen = false
+	saveSettings()
 	notify("UI closed")
 end)
 
@@ -756,17 +813,31 @@ openBtn.MouseButton1Click:Connect(function()
 	end
 end)
 
+closeBtn.MouseEnter:Connect(function()
+	TweenService:Create(closeBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(80, 35, 45)}):Play()
+end)
+closeBtn.MouseLeave:Connect(function()
+	TweenService:Create(closeBtn, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(50, 30, 35)}):Play()
+end)
+
 -------------------------------------------------
 -- Auto Refresh
 -------------------------------------------------
 task.spawn(function()
 	while task.wait(Settings.AutoRefreshInterval) do
-		if autoRefreshEnabled and isOpen then
+		if autoRefreshEnabled and isOpen and screenGui.Parent then
 			refreshEggs()
 		end
 	end
 end)
 
+-- Save on leave
+player.AncestryChanged:Connect(function()
+	if not player.Parent then
+		saveSettings()
+	end
+end)
+
 refreshEggs()
-notify("Egg Manager loaded")
-print("Modern Egg Manager loaded")
+notify("Divine Soul loaded")
+print("Divine Soul - Ride a Pet loaded (with settings save)")
