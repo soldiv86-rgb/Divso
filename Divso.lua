@@ -188,13 +188,13 @@ closeCorner.Parent = closeBtn
 -- Open / Toggle button (DS) - always visible + draggable
 local openBtn = Instance.new("TextButton")
 openBtn.Size = UDim2.new(0, 48, 0, 48)
-openBtn.Position = UDim2.new(0, 20, 0.5, -24)
+openBtn.Position = UDim2.new(0, 40, 0, 100) -- Left top, close to middle
 openBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 45)
 openBtn.Text = "DS"
 openBtn.TextColor3 = Color3.fromRGB(220, 220, 255)
 openBtn.Font = Enum.Font.GothamBold
 openBtn.TextSize = 14
-openBtn.Visible = true          -- Always visible
+openBtn.Visible = true
 openBtn.AutoButtonColor = false
 openBtn.Active = true
 openBtn.Parent = screenGui
@@ -263,7 +263,7 @@ UserInputService.InputChanged:Connect(function(input)
 end)
 
 -------------------------------------------------
--- Open Button (always visible + draggable + toggle)
+-- Open Button Drag + Toggle (improved)
 -------------------------------------------------
 local openDragging = false
 local openDragStart = nil
@@ -279,8 +279,9 @@ openBtn.InputBegan:Connect(function(input)
 	end
 end)
 
-openBtn.InputEnded:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+-- Use UserInputService so dragging continues even if mouse leaves the button
+UserInputService.InputEnded:Connect(function(input)
+	if openDragging and (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) then
 		openDragging = false
 
 		-- Only toggle if it was a click (not a drag)
@@ -301,13 +302,15 @@ UserInputService.InputChanged:Connect(function(input)
 	if openDragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
 		local delta = input.Position - openDragStart
 
-		if math.abs(delta.X) > 4 or math.abs(delta.Y) > 4 then
+		if math.abs(delta.X) > 5 or math.abs(delta.Y) > 5 then
 			openMoved = true
 		end
 
 		openBtn.Position = UDim2.new(
-			openStartPos.X.Scale, openStartPos.X.Offset + delta.X,
-			openStartPos.Y.Scale, openStartPos.Y.Offset + delta.Y
+			openStartPos.X.Scale,
+			openStartPos.X.Offset + delta.X,
+			openStartPos.Y.Scale,
+			openStartPos.Y.Offset + delta.Y
 		)
 	end
 end)
@@ -809,7 +812,7 @@ createButton(rightContent, "Refresh Eggs", Color3.fromRGB(45, 45, 70), function(
 end)
 
 -------------------------------------------------
--- Close button (X) - only hides the main UI
+-- Close button (X)
 -------------------------------------------------
 closeBtn.MouseButton1Click:Connect(function()
 	main.Visible = false
