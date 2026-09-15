@@ -1,10 +1,11 @@
--- Divine Soul - Ride a Pet (Black & Orange + Card Layout)
+-- Divine Soul - Ride a Pet (Black & Orange + Auto Farm)
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local CoreGui = game:GetService("CoreGui")
 local HttpService = game:GetService("HttpService")
 local TeleportService = game:GetService("TeleportService")
+local VirtualInputManager = game:GetService("VirtualInputManager")
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 -------------------------------------------------
@@ -16,9 +17,12 @@ local Settings = {
 	MultiStepDelay = 0.8,
 	MultiStepSteps = 14,
 	AutoRefreshInterval = 3,
-	NotificationDuration = 2.5,
 	ESPEnabled = true,
 	AutoRefreshEnabled = false,
+	AutoFarmEnabled = false,
+	AutoFarmDelay = 1.2,
+	ReturnMethod = "Tween", -- "Tween" or "MultiStep"
+	CollectKey = Enum.KeyCode.E,
 	EnabledRarities = {
 		Ethereal = true, Divine = true, Mythic = true, Legendary = true,
 		Epic = true, Rare = true, Common = true
@@ -46,17 +50,21 @@ local function saveSettings()
 end
 loadSettings()
 -------------------------------------------------
--- RARITY DATA (Pristine colors)
+-- RARITY DATA
 -------------------------------------------------
 local Rarities = {"Ethereal", "Divine", "Mythic", "Legendary", "Epic", "Rare", "Common"}
+local RarityPriority = {
+	Ethereal = 7, Divine = 6, Mythic = 5, Legendary = 4,
+	Epic = 3, Rare = 2, Common = 1
+}
 local RarityColors = {
-	Ethereal  = Color3.fromRGB(200, 90, 255),   -- Bright violet
-	Divine    = Color3.fromRGB(255, 215, 60),   -- Clean gold
-	Mythic    = Color3.fromRGB(190, 60, 255),   -- Vivid purple
-	Legendary = Color3.fromRGB(255, 155, 30),   -- Strong orange-gold
-	Epic      = Color3.fromRGB(170, 70, 255),   -- Rich purple
-	Rare      = Color3.fromRGB(60, 140, 255),   -- Bright blue
-	Common    = Color3.fromRGB(160, 160, 170),  -- Soft gray
+	Ethereal  = Color3.fromRGB(200, 90, 255),
+	Divine    = Color3.fromRGB(255, 215, 60),
+	Mythic    = Color3.fromRGB(190, 60, 255),
+	Legendary = Color3.fromRGB(255, 155, 30),
+	Epic      = Color3.fromRGB(170, 70, 255),
+	Rare      = Color3.fromRGB(60, 140, 255),
+	Common    = Color3.fromRGB(160, 160, 170),
 }
 local RarityEggs = {
 	Ethereal = { "Cherub Egg" },
@@ -77,7 +85,9 @@ local eggButtons = {}
 local espObjects = {}
 local espEnabled = Settings.ESPEnabled
 local autoRefreshEnabled = Settings.AutoRefreshEnabled
+local autoFarmEnabled = Settings.AutoFarmEnabled
 local enabledRarities = Settings.EnabledRarities
+local returnMethod = Settings.ReturnMethod
 -------------------------------------------------
 -- CLEANUP
 -------------------------------------------------
@@ -339,7 +349,7 @@ hopDesc.Font = Enum.Font.Gotham
 hopDesc.TextSize = 14
 hopDesc.Parent = hopContent
 -------------------------------------------------
--- FLOATING + NOTIF
+-- FLOATING BUTTON
 -------------------------------------------------
 local openBtn = Instance.new("TextButton")
 openBtn.Size = UDim2.new(0, 46, 0, 46)
@@ -360,47 +370,9 @@ local openStroke = Instance.new("UIStroke")
 openStroke.Color = Color3.fromRGB(255, 140, 40)
 openStroke.Thickness = 1.4
 openStroke.Parent = openBtn
-
-local notif = Instance.new("Frame")
-notif.Size = UDim2.new(0, 250, 0, 32)
-notif.Position = UDim2.new(0.5, -125, 0, 16)
-notif.BackgroundColor3 = Color3.fromRGB(20, 20, 22)
-notif.BorderSizePixel = 0
-notif.Visible = false
-notif.Parent = screenGui
-local notifCorner = Instance.new("UICorner")
-notifCorner.CornerRadius = UDim.new(0, 8)
-notifCorner.Parent = notif
-local notifStroke = Instance.new("UIStroke")
-notifStroke.Color = Color3.fromRGB(255, 140, 40)
-notifStroke.Thickness = 1
-notifStroke.Parent = notif
-
-local notifText = Instance.new("TextLabel")
-notifText.Size = UDim2.new(1, -10, 1, 0)
-notifText.Position = UDim2.new(0, 5, 0, 0)
-notifText.BackgroundTransparency = 1
-notifText.TextColor3 = Color3.fromRGB(255, 200, 140)
-notifText.Font = Enum.Font.GothamMedium
-notifText.TextSize = 13
-notifText.TextXAlignment = Enum.TextXAlignment.Center
-notifText.Parent = notif
 -------------------------------------------------
 -- HELPERS
 -------------------------------------------------
-local function notify(msg)
-	notifText.Text = msg
-	notif.Visible = true
-	notif.BackgroundTransparency = 0
-	notifText.TextTransparency = 0
-	task.delay(Settings.NotificationDuration, function()
-		TweenService:Create(notif, TweenInfo.new(0.3), {BackgroundTransparency = 1}):Play()
-		TweenService:Create(notifText, TweenInfo.new(0.3), {TextTransparency = 1}):Play()
-		task.wait(0.3)
-		notif.Visible = false
-	end)
-end
-
 local function createCard(parent, titleText)
 	local card = Instance.new("Frame")
 	card.Size = UDim2.new(1, 0, 0, 0)
@@ -626,7 +598,7 @@ local function createToggle(parent, text, default, callback)
 	return frame
 end
 -------------------------------------------------
--- TELEPORT HELPERS (Own base only)
+-- TELEPORT HELPERS
 -------------------------------------------------
 local function getBase()
 	local plots = workspace:FindFirstChild("Plots")
@@ -657,13 +629,6 @@ local function getBase()
 			end
 		end
 	end
-
-	local firstPlot = plots:FindFirstChild("Plot")
-	if firstPlot then
-		return firstPlot:FindFirstChild("Baseplate")
-			or firstPlot:FindFirstChild("Base")
-			or firstPlot:FindFirstChildWhichIsA("BasePart")
-	end
 	return nil
 end
 
@@ -679,25 +644,18 @@ end
 local function tweenToBase()
 	local base = getBase()
 	local char = player.Character
-	if not base or not char then
-		notify("Your base not found")
-		return
-	end
+	if not base or not char then return end
 	local hrp = char:FindFirstChild("HumanoidRootPart")
 	if not hrp then return end
 	TweenService:Create(hrp, TweenInfo.new(Settings.TweenDuration, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
 		CFrame = base:GetPivot() * CFrame.new(0, 5, 0)
 	}):Play()
-	notify("Tweening to your base...")
 end
 
 local function multiStepToBase()
 	local base = getBase()
 	local char = player.Character
-	if not base or not char then
-		notify("Your base not found")
-		return
-	end
+	if not base or not char then return end
 	local hrp = char:FindFirstChild("HumanoidRootPart")
 	if not hrp then return end
 	local start = hrp.Position
@@ -705,7 +663,6 @@ local function multiStepToBase()
 	local rayParams = RaycastParams.new()
 	rayParams.FilterType = Enum.RaycastFilterType.Exclude
 	rayParams.FilterDescendantsInstances = {char}
-	notify("Multi-step started")
 	for i = 1, Settings.MultiStepSteps do
 		local pos = start:Lerp(goal, i / Settings.MultiStepSteps)
 		local ray = workspace:Raycast(pos + Vector3.new(0, 5, 0), Vector3.new(0, -20, 0), rayParams)
@@ -715,7 +672,78 @@ local function multiStepToBase()
 		hrp.CFrame = CFrame.new(pos)
 		task.wait(Settings.MultiStepDelay)
 	end
-	notify("Multi-step finished")
+end
+
+local function returnToBase()
+	if returnMethod == "MultiStep" then
+		multiStepToBase()
+	else
+		tweenToBase()
+	end
+end
+
+local function pressCollectKey()
+	local key = Settings.CollectKey or Enum.KeyCode.E
+	pcall(function()
+		VirtualInputManager:SendKeyEvent(true, key, false, game)
+		task.wait(0.05)
+		VirtualInputManager:SendKeyEvent(false, key, false, game)
+	end)
+end
+-------------------------------------------------
+-- AUTO FARM LOGIC
+-------------------------------------------------
+local function getBestEgg()
+	local rendered = workspace:FindFirstChild("RenderedEggs")
+	if not rendered then return nil end
+
+	local bestEgg = nil
+	local bestPriority = -1
+
+	for _, egg in ipairs(rendered:GetChildren()) do
+		for rarity, names in pairs(RarityEggs) do
+			if enabledRarities[rarity] then
+				for _, name in ipairs(names) do
+					if egg.Name == name then
+						local prio = RarityPriority[rarity] or 0
+						if prio > bestPriority then
+							bestPriority = prio
+							bestEgg = egg
+						end
+					end
+				end
+			end
+		end
+	end
+	return bestEgg
+end
+
+local autoFarmRunning = false
+local function startAutoFarm()
+	if autoFarmRunning then return end
+	autoFarmRunning = true
+
+	task.spawn(function()
+		while autoFarmEnabled and screenGui.Parent do
+			local egg = getBestEgg()
+			if egg then
+				-- Instant TP to egg
+				teleportTo(egg)
+				task.wait(0.25)
+				-- Collect
+				pressCollectKey()
+				task.wait(0.35)
+				-- Return to base
+				returnToBase()
+				-- Wait for the delay
+				task.wait(Settings.AutoFarmDelay)
+			else
+				-- No eggs found → wait a bit then check again
+				task.wait(1.5)
+			end
+		end
+		autoFarmRunning = false
+	end)
 end
 -------------------------------------------------
 -- EGGS
@@ -730,10 +758,8 @@ end
 local function refreshEggs()
 	clearEggs()
 	local rendered = workspace:FindFirstChild("RenderedEggs")
-	if not rendered then
-		notify("No RenderedEggs found")
-		return
-	end
+	if not rendered then return end
+
 	local allowed = {}
 	for rarity, on in pairs(enabledRarities) do
 		if on then
@@ -742,22 +768,19 @@ local function refreshEggs()
 			end
 		end
 	end
-	local count = 0
+
 	for _, egg in ipairs(rendered:GetChildren()) do
 		local rarity = allowed[egg.Name]
 		if rarity then
 			if currentSearch == "" or egg.Name:lower():find(currentSearch:lower(), 1, true) then
-				count += 1
 				local color = RarityColors[rarity] or Color3.fromRGB(60, 50, 40)
 				local btn = createButton(eggScroll, egg.Name, color, function()
 					teleportTo(egg)
-					notify("Teleported to " .. egg.Name)
 				end)
 				eggButtons[btn] = true
 			end
 		end
 	end
-	notify("Showing " .. count .. " eggs")
 end
 
 eggSearch:GetPropertyChangedSignal("Text"):Connect(function()
@@ -815,8 +838,91 @@ local function updateRarityButtons()
 end
 updateRarityButtons()
 -------------------------------------------------
--- CONTROLS (CARD LAYOUT - Black & Orange)
+-- CONTROLS
 -------------------------------------------------
+
+-- AUTO FARM CARD (top)
+local autoFarmCard = createCard(left, "AUTO FARM")
+
+createToggle(autoFarmCard, "Auto Farm", Settings.AutoFarmEnabled, function(state)
+	autoFarmEnabled = state
+	Settings.AutoFarmEnabled = state
+	if state then
+		startAutoFarm()
+	end
+	saveSettings()
+end)
+
+createSlider(autoFarmCard, "Farm Delay (s)", 0.4, 4.0, Settings.AutoFarmDelay, function(v)
+	Settings.AutoFarmDelay = v
+end)
+
+-- Return Method selector
+local returnFrame = Instance.new("Frame")
+returnFrame.Size = UDim2.new(1, 0, 0, 34)
+returnFrame.BackgroundColor3 = Color3.fromRGB(24, 24, 26)
+returnFrame.BorderSizePixel = 0
+returnFrame.Parent = autoFarmCard
+local rfCorner = Instance.new("UICorner")
+rfCorner.CornerRadius = UDim.new(0, 8)
+rfCorner.Parent = returnFrame
+
+local returnLabel = Instance.new("TextLabel")
+returnLabel.Size = UDim2.new(0.45, 0, 1, 0)
+returnLabel.Position = UDim2.new(0, 10, 0, 0)
+returnLabel.BackgroundTransparency = 1
+returnLabel.Text = "Return Method"
+returnLabel.TextColor3 = Color3.fromRGB(230, 180, 110)
+returnLabel.Font = Enum.Font.Gotham
+returnLabel.TextSize = 12
+returnLabel.TextXAlignment = Enum.TextXAlignment.Left
+returnLabel.Parent = returnFrame
+
+local tweenBtn = Instance.new("TextButton")
+tweenBtn.Size = UDim2.new(0.25, -4, 0, 24)
+tweenBtn.Position = UDim2.new(0.48, 0, 0.5, -12)
+tweenBtn.BackgroundColor3 = returnMethod == "Tween" and Color3.fromRGB(255, 140, 40) or Color3.fromRGB(40, 35, 30)
+tweenBtn.Text = "Tween"
+tweenBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+tweenBtn.Font = Enum.Font.GothamMedium
+tweenBtn.TextSize = 11
+tweenBtn.AutoButtonColor = false
+tweenBtn.Parent = returnFrame
+local tbCorner = Instance.new("UICorner")
+tbCorner.CornerRadius = UDim.new(0, 6)
+tbCorner.Parent = tweenBtn
+
+local multiBtn = Instance.new("TextButton")
+multiBtn.Size = UDim2.new(0.25, -4, 0, 24)
+multiBtn.Position = UDim2.new(0.74, 0, 0.5, -12)
+multiBtn.BackgroundColor3 = returnMethod == "MultiStep" and Color3.fromRGB(255, 140, 40) or Color3.fromRGB(40, 35, 30)
+multiBtn.Text = "Multi"
+multiBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+multiBtn.Font = Enum.Font.GothamMedium
+multiBtn.TextSize = 11
+multiBtn.AutoButtonColor = false
+multiBtn.Parent = returnFrame
+local mbCorner = Instance.new("UICorner")
+mbCorner.CornerRadius = UDim.new(0, 6)
+mbCorner.Parent = multiBtn
+
+local function updateReturnButtons()
+	tweenBtn.BackgroundColor3 = returnMethod == "Tween" and Color3.fromRGB(255, 140, 40) or Color3.fromRGB(40, 35, 30)
+	multiBtn.BackgroundColor3 = returnMethod == "MultiStep" and Color3.fromRGB(255, 140, 40) or Color3.fromRGB(40, 35, 30)
+end
+
+tweenBtn.MouseButton1Click:Connect(function()
+	returnMethod = "Tween"
+	Settings.ReturnMethod = "Tween"
+	updateReturnButtons()
+	saveSettings()
+end)
+multiBtn.MouseButton1Click:Connect(function()
+	returnMethod = "MultiStep"
+	Settings.ReturnMethod = "MultiStep"
+	updateReturnButtons()
+	saveSettings()
+end)
 
 -- MOVEMENT CARD
 local movementCard = createCard(left, "MOVEMENT")
@@ -825,16 +931,13 @@ createButton(movementCard, "Instant Return to Base", Color3.fromRGB(255, 120, 30
 	local base = getBase()
 	if base then
 		teleportTo(base)
-		notify("Returned to your base")
-	else
-		notify("Your base not found")
 	end
 end)
 
-createButton(movementCard, "Multi-Teleport", Color3.fromRGB(200, 90, 20), function()
+createButton(movementCard, "Multi-Step (Grounded)", Color3.fromRGB(200, 90, 20), function()
 	multiStepToBase()
 end)
-createSlider(movementCard, "Multi-Teleport Delay (s)", 0.2, 1.2, Settings.MultiStepDelay, function(v)
+createSlider(movementCard, "Multi-Step Delay (s)", 0.2, 1.2, Settings.MultiStepDelay, function(v)
 	Settings.MultiStepDelay = v
 end)
 
@@ -851,22 +954,18 @@ local optionsCard = createCard(left, "OPTIONS")
 createToggle(optionsCard, "Auto Refresh", Settings.AutoRefreshEnabled, function(state)
 	autoRefreshEnabled = state
 	Settings.AutoRefreshEnabled = state
-	notify(state and "Auto refresh enabled" or "Auto refresh disabled")
 end)
 
 createToggle(optionsCard, "Egg ESP", Settings.ESPEnabled, function(state)
 	espEnabled = state
 	Settings.ESPEnabled = state
-	notify(state and "ESP enabled" or "ESP disabled")
 end)
 
--- Extra buttons
 createButton(eggScroll, "Refresh Eggs", Color3.fromRGB(50, 40, 30), function()
 	refreshEggs()
 end)
 
 createButton(hopContent, "Server Hop Now", Color3.fromRGB(255, 120, 30), function()
-	notify("Server hopping...")
 	TeleportService:Teleport(game.PlaceId, player)
 end).Position = UDim2.new(0, 0, 0, 90)
 -------------------------------------------------
@@ -896,7 +995,6 @@ closeBtn.MouseButton1Click:Connect(function()
 	main.Visible = false
 	isOpen = false
 	saveSettings()
-	notify("UI closed")
 end)
 
 local openDragging, openDragStart, openStartPos, openMoved = false, nil, nil, false
@@ -914,7 +1012,6 @@ UserInputService.InputEnded:Connect(function(input)
 		if not openMoved then
 			isOpen = not isOpen
 			main.Visible = isOpen
-			notify(isOpen and "UI opened" or "UI closed")
 			if not isOpen then saveSettings() end
 		end
 	end
@@ -947,7 +1044,7 @@ UserInputService.InputChanged:Connect(function(input)
 	end
 end)
 -------------------------------------------------
--- ESP
+-- ESP (only selected rarities)
 -------------------------------------------------
 local ESPFolder = Instance.new("Folder")
 ESPFolder.Name = "EggSizeESP"
@@ -962,12 +1059,28 @@ local function getSizeLabel(egg)
 	else return "Small", Color3.fromRGB(170, 170, 180) end
 end
 
+local function isEggAllowed(egg)
+	for rarity, names in pairs(RarityEggs) do
+		if enabledRarities[rarity] then
+			for _, name in ipairs(names) do
+				if egg.Name == name then
+					return true
+				end
+			end
+		end
+	end
+	return false
+end
+
 local function createESP(egg)
 	if not espEnabled then return end
+	if not isEggAllowed(egg) then return end
+
 	local id = tostring(egg:GetDebugId())
 	if espObjects[id] then return end
 	local part = egg:FindFirstChild("EggBase") or egg.PrimaryPart or egg:FindFirstChildWhichIsA("BasePart")
 	if not part then return end
+
 	local bb = Instance.new("BillboardGui")
 	bb.Name = id
 	bb.Adornee = part
@@ -975,6 +1088,7 @@ local function createESP(egg)
 	bb.StudsOffset = Vector3.new(0, 4, 0)
 	bb.AlwaysOnTop = true
 	bb.Parent = ESPFolder
+
 	local label = Instance.new("TextLabel")
 	label.Size = UDim2.new(1, 0, 1, 0)
 	label.BackgroundTransparency = 1
@@ -982,6 +1096,7 @@ local function createESP(egg)
 	label.Font = Enum.Font.GothamBold
 	label.TextSize = 13
 	label.Parent = bb
+
 	local text, color = getSizeLabel(egg)
 	label.Text = egg.Name .. "\n" .. text
 	label.TextColor3 = color
@@ -997,11 +1112,14 @@ task.spawn(function()
 		end
 		local folder = workspace:FindFirstChild("RenderedEggs")
 		if not folder then continue end
+
 		local alive = {}
 		for _, egg in ipairs(folder:GetChildren()) do
-			local id = tostring(egg:GetDebugId())
-			alive[id] = true
-			createESP(egg)
+			if isEggAllowed(egg) then
+				local id = tostring(egg:GetDebugId())
+				alive[id] = true
+				createESP(egg)
+			end
 		end
 		for id, gui in pairs(espObjects) do
 			if not alive[id] then
@@ -1022,6 +1140,10 @@ task.spawn(function()
 	end
 end)
 
+-- Start auto farm if it was enabled
+if autoFarmEnabled then
+	startAutoFarm()
+end
+
 refreshEggs()
-notify("Divine Soul loaded")
-print("Divine Soul loaded - Black & Orange")
+print("Divine Soul loaded - Auto Farm + Filtered ESP")
