@@ -1,4 +1,4 @@
--- Professional Egg Manager + Adjustable Tween Slider
+-- Professional Egg Manager (Tabs + Adjustable Multi-Step)
 
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
@@ -6,15 +6,14 @@ local UserInputService = game:GetService("UserInputService")
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
--- Default tween duration
-local TWEEN_DURATION = 1.6
+local TWEEN_DURATION = 2.8
+local MULTISTEP_DELAY = 0.22
 
 -- Remove old UI
 if playerGui:FindFirstChild("EggTeleportUI") then
 	playerGui.EggTeleportUI:Destroy()
 end
 
--- ====================== UI ======================
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "EggTeleportUI"
 screenGui.ResetOnSpawn = false
@@ -22,8 +21,8 @@ screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 screenGui.Parent = playerGui
 
 local mainFrame = Instance.new("Frame")
-mainFrame.Size = UDim2.new(0, 290, 0, 510)
-mainFrame.Position = UDim2.new(0, 30, 0.22, 0)
+mainFrame.Size = UDim2.new(0, 300, 0, 520)
+mainFrame.Position = UDim2.new(0, 30, 0.2, 0)
 mainFrame.BackgroundColor3 = Color3.fromRGB(16, 16, 20)
 mainFrame.BorderSizePixel = 0
 mainFrame.Active = true
@@ -89,117 +88,193 @@ UserInputService.InputChanged:Connect(function(input)
 	end
 end)
 
--- Content
-local content = Instance.new("ScrollingFrame")
-content.Size = UDim2.new(1, -24, 1, -66)
-content.Position = UDim2.new(0, 12, 0, 56)
-content.BackgroundTransparency = 1
-content.BorderSizePixel = 0
-content.ScrollBarThickness = 4
-content.ScrollBarImageColor3 = Color3.fromRGB(100, 100, 140)
-content.CanvasSize = UDim2.new(0, 0, 0, 0)
-content.Parent = mainFrame
+-- Tab Buttons
+local tabFrame = Instance.new("Frame")
+tabFrame.Size = UDim2.new(1, -24, 0, 34)
+tabFrame.Position = UDim2.new(0, 12, 0, 56)
+tabFrame.BackgroundTransparency = 1
+tabFrame.Parent = mainFrame
 
-local list = Instance.new("UIListLayout")
-list.Padding = UDim.new(0, 9)
-list.SortOrder = Enum.SortOrder.LayoutOrder
-list.Parent = content
+local tabTeleport = Instance.new("TextButton")
+tabTeleport.Size = UDim2.new(0.5, -4, 1, 0)
+tabTeleport.BackgroundColor3 = Color3.fromRGB(50, 90, 160)
+tabTeleport.Text = "Teleport"
+tabTeleport.TextColor3 = Color3.fromRGB(255, 255, 255)
+tabTeleport.Font = Enum.Font.GothamBold
+tabTeleport.TextSize = 14
+tabTeleport.Parent = tabFrame
 
--- ====================== SLIDER ======================
-local sliderFrame = Instance.new("Frame")
-sliderFrame.Size = UDim2.new(1, 0, 0, 58)
-sliderFrame.BackgroundColor3 = Color3.fromRGB(28, 28, 36)
-sliderFrame.BorderSizePixel = 0
-sliderFrame.Parent = content
+local tabEggs = Instance.new("TextButton")
+tabEggs.Size = UDim2.new(0.5, -4, 1, 0)
+tabEggs.Position = UDim2.new(0.5, 4, 0, 0)
+tabEggs.BackgroundColor3 = Color3.fromRGB(40, 40, 55)
+tabEggs.Text = "Eggs"
+tabEggs.TextColor3 = Color3.fromRGB(200, 200, 220)
+tabEggs.Font = Enum.Font.GothamBold
+tabEggs.TextSize = 14
+tabEggs.Parent = tabFrame
 
-local sliderCorner = Instance.new("UICorner")
-sliderCorner.CornerRadius = UDim.new(0, 10)
-sliderCorner.Parent = sliderFrame
+local function corner(btn)
+	local c = Instance.new("UICorner")
+	c.CornerRadius = UDim.new(0, 8)
+	c.Parent = btn
+end
+corner(tabTeleport)
+corner(tabEggs)
 
-local sliderTitle = Instance.new("TextLabel")
-sliderTitle.Size = UDim2.new(1, -16, 0, 20)
-sliderTitle.Position = UDim2.new(0, 10, 0, 6)
-sliderTitle.BackgroundTransparency = 1
-sliderTitle.Text = "Tween Speed: 1.6s"
-sliderTitle.TextColor3 = Color3.fromRGB(200, 200, 220)
-sliderTitle.Font = Enum.Font.GothamMedium
-sliderTitle.TextSize = 13
-sliderTitle.TextXAlignment = Enum.TextXAlignment.Left
-sliderTitle.Parent = sliderFrame
+-- Pages
+local teleportPage = Instance.new("ScrollingFrame")
+teleportPage.Size = UDim2.new(1, -24, 1, -108)
+teleportPage.Position = UDim2.new(0, 12, 0, 98)
+teleportPage.BackgroundTransparency = 1
+teleportPage.BorderSizePixel = 0
+teleportPage.ScrollBarThickness = 4
+teleportPage.Visible = true
+teleportPage.Parent = mainFrame
 
-local sliderBg = Instance.new("Frame")
-sliderBg.Size = UDim2.new(1, -20, 0, 8)
-sliderBg.Position = UDim2.new(0, 10, 0, 34)
-sliderBg.BackgroundColor3 = Color3.fromRGB(45, 45, 60)
-sliderBg.BorderSizePixel = 0
-sliderBg.Parent = sliderFrame
+local eggsPage = Instance.new("ScrollingFrame")
+eggsPage.Size = UDim2.new(1, -24, 1, -108)
+eggsPage.Position = UDim2.new(0, 12, 0, 98)
+eggsPage.BackgroundTransparency = 1
+eggsPage.BorderSizePixel = 0
+eggsPage.ScrollBarThickness = 4
+eggsPage.Visible = false
+eggsPage.Parent = mainFrame
 
-local sliderBgCorner = Instance.new("UICorner")
-sliderBgCorner.CornerRadius = UDim.new(1, 0)
-sliderBgCorner.Parent = sliderBg
-
-local sliderFill = Instance.new("Frame")
-sliderFill.Size = UDim2.new(0.32, 0, 1, 0) -- default position
-sliderFill.BackgroundColor3 = Color3.fromRGB(90, 130, 255)
-sliderFill.BorderSizePixel = 0
-sliderFill.Parent = sliderBg
-
-local sliderFillCorner = Instance.new("UICorner")
-sliderFillCorner.CornerRadius = UDim.new(1, 0)
-sliderFillCorner.Parent = sliderFill
-
-local sliderButton = Instance.new("TextButton")
-sliderButton.Size = UDim2.new(0, 18, 0, 18)
-sliderButton.Position = UDim2.new(0.32, -9, 0.5, -9)
-sliderButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-sliderButton.Text = ""
-sliderButton.AutoButtonColor = false
-sliderButton.Parent = sliderBg
-
-local sliderBtnCorner = Instance.new("UICorner")
-sliderBtnCorner.CornerRadius = UDim.new(1, 0)
-sliderBtnCorner.Parent = sliderButton
-
--- Slider logic (0.4s → 4.0s)
-local sliding = false
-local minDuration = 0.4
-local maxDuration = 4.0
-
-local function updateSlider(value)
-	value = math.clamp(value, 0, 1)
-	sliderFill.Size = UDim2.new(value, 0, 1, 0)
-	sliderButton.Position = UDim2.new(value, -9, 0.5, -9)
-
-	TWEEN_DURATION = minDuration + (maxDuration - minDuration) * value
-	TWEEN_DURATION = math.floor(TWEEN_DURATION * 10) / 10 -- 1 decimal
-	sliderTitle.Text = "Tween Speed: " .. TWEEN_DURATION .. "s"
+local function addList(parent)
+	local l = Instance.new("UIListLayout")
+	l.Padding = UDim.new(0, 9)
+	l.SortOrder = Enum.SortOrder.LayoutOrder
+	l.Parent = parent
+	return l
 end
 
-sliderButton.InputBegan:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-		sliding = true
-	end
+local teleportList = addList(teleportPage)
+local eggsList = addList(eggsPage)
+
+-- Tab switching
+local function switchTab(isTeleport)
+	teleportPage.Visible = isTeleport
+	eggsPage.Visible = not isTeleport
+
+	tabTeleport.BackgroundColor3 = isTeleport and Color3.fromRGB(50, 90, 160) or Color3.fromRGB(40, 40, 55)
+	tabEggs.BackgroundColor3 = isTeleport and Color3.fromRGB(40, 40, 55) or Color3.fromRGB(50, 90, 160)
+
+	tabTeleport.TextColor3 = isTeleport and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(200, 200, 220)
+	tabEggs.TextColor3 = isTeleport and Color3.fromRGB(200, 200, 220) or Color3.fromRGB(255, 255, 255)
+end
+
+tabTeleport.MouseButton1Click:Connect(function()
+	switchTab(true)
+end)
+tabEggs.MouseButton1Click:Connect(function()
+	switchTab(false)
 end)
 
-UserInputService.InputEnded:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-		sliding = false
+-- ====================== SLIDERS ======================
+local function createSlider(parent, titleText, minVal, maxVal, defaultVal, callback)
+	local frame = Instance.new("Frame")
+	frame.Size = UDim2.new(1, 0, 0, 58)
+	frame.BackgroundColor3 = Color3.fromRGB(28, 28, 36)
+	frame.BorderSizePixel = 0
+	frame.Parent = parent
+
+	local c = Instance.new("UICorner")
+	c.CornerRadius = UDim.new(0, 10)
+	c.Parent = frame
+
+	local title = Instance.new("TextLabel")
+	title.Size = UDim2.new(1, -16, 0, 20)
+	title.Position = UDim2.new(0, 10, 0, 6)
+	title.BackgroundTransparency = 1
+	title.Text = titleText
+	title.TextColor3 = Color3.fromRGB(200, 200, 220)
+	title.Font = Enum.Font.GothamMedium
+	title.TextSize = 13
+	title.TextXAlignment = Enum.TextXAlignment.Left
+	title.Parent = frame
+
+	local bg = Instance.new("Frame")
+	bg.Size = UDim2.new(1, -20, 0, 8)
+	bg.Position = UDim2.new(0, 10, 0, 34)
+	bg.BackgroundColor3 = Color3.fromRGB(45, 45, 60)
+	bg.BorderSizePixel = 0
+	bg.Parent = frame
+
+	local bgC = Instance.new("UICorner")
+	bgC.CornerRadius = UDim.new(1, 0)
+	bgC.Parent = bg
+
+	local fill = Instance.new("Frame")
+	fill.Size = UDim2.new(0, 0, 1, 0)
+	fill.BackgroundColor3 = Color3.fromRGB(90, 130, 255)
+	fill.BorderSizePixel = 0
+	fill.Parent = bg
+
+	local fillC = Instance.new("UICorner")
+	fillC.CornerRadius = UDim.new(1, 0)
+	fillC.Parent = fill
+
+	local btn = Instance.new("TextButton")
+	btn.Size = UDim2.new(0, 18, 0, 18)
+	btn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	btn.Text = ""
+	btn.AutoButtonColor = false
+	btn.Parent = bg
+
+	local btnC = Instance.new("UICorner")
+	btnC.CornerRadius = UDim.new(1, 0)
+	btnC.Parent = btn
+
+	local sliding = false
+
+	local function update(value)
+		value = math.clamp(value, 0, 1)
+		fill.Size = UDim2.new(value, 0, 1, 0)
+		btn.Position = UDim2.new(value, -9, 0.5, -9)
+
+		local result = minVal + (maxVal - minVal) * value
+		result = math.floor(result * 100) / 100
+		title.Text = titleText:gsub("%d+%.?%d*", tostring(result))
+		callback(result)
 	end
+
+	btn.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+			sliding = true
+		end
+	end)
+
+	UserInputService.InputEnded:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+			sliding = false
+		end
+	end)
+
+	UserInputService.InputChanged:Connect(function(input)
+		if sliding and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+			local rel = input.Position.X - bg.AbsolutePosition.X
+			update(rel / bg.AbsoluteSize.X)
+		end
+	end)
+
+	-- Set default
+	local defaultAlpha = (defaultVal - minVal) / (maxVal - minVal)
+	update(defaultAlpha)
+
+	return frame
+end
+
+createSlider(teleportPage, "Tween Speed: 2.8s", 1.0, 6.0, 2.8, function(val)
+	TWEEN_DURATION = val
 end)
 
-UserInputService.InputChanged:Connect(function(input)
-	if sliding and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-		local rel = input.Position.X - sliderBg.AbsolutePosition.X
-		local value = rel / sliderBg.AbsoluteSize.X
-		updateSlider(value)
-	end
+createSlider(teleportPage, "Multi-Step Delay: 0.22s", 0.08, 0.50, 0.22, function(val)
+	MULTISTEP_DELAY = val
 end)
-
--- Set default
-updateSlider(0.32)
 
 -- ====================== BUTTONS ======================
-local function createButton(text, bgColor, callback)
+local function createButton(parent, text, bgColor, callback)
 	local btn = Instance.new("TextButton")
 	btn.Size = UDim2.new(1, 0, 0, 38)
 	btn.BackgroundColor3 = bgColor
@@ -208,17 +283,17 @@ local function createButton(text, bgColor, callback)
 	btn.Font = Enum.Font.GothamMedium
 	btn.TextSize = 14
 	btn.AutoButtonColor = false
-	btn.Parent = content
+	btn.Parent = parent
 
-	local corner = Instance.new("UICorner")
-	corner.CornerRadius = UDim.new(0, 10)
-	corner.Parent = btn
+	local c = Instance.new("UICorner")
+	c.CornerRadius = UDim.new(0, 10)
+	c.Parent = btn
 
-	local stroke = Instance.new("UIStroke")
-	stroke.Color = Color3.fromRGB(255, 255, 255)
-	stroke.Thickness = 1
-	stroke.Transparency = 0.92
-	stroke.Parent = btn
+	local s = Instance.new("UIStroke")
+	s.Color = Color3.fromRGB(255, 255, 255)
+	s.Thickness = 1
+	s.Transparency = 0.92
+	s.Parent = btn
 
 	btn.MouseEnter:Connect(function()
 		TweenService:Create(btn, TweenInfo.new(0.15), {
@@ -259,11 +334,10 @@ local function tweenToBase()
 	local hrp = char:FindFirstChild("HumanoidRootPart")
 	if not hrp then return end
 
-	local tween = TweenService:Create(hrp, TweenInfo.new(TWEEN_DURATION, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+	TweenService:Create(hrp, TweenInfo.new(TWEEN_DURATION, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
 		CFrame = base:GetPivot() * CFrame.new(0, 5, 0)
-	})
-	tween:Play()
-	print("Tweening to base • " .. TWEEN_DURATION .. "s")
+	}):Play()
+	print("Tweening • " .. TWEEN_DURATION .. "s")
 end
 
 local function multiStepToBase()
@@ -275,34 +349,30 @@ local function multiStepToBase()
 
 	local start = hrp.Position
 	local goal = (base:GetPivot() * CFrame.new(0, 5, 0)).Position
-	local steps = 7
+	local steps = 12
 
 	for i = 1, steps do
 		hrp.CFrame = CFrame.new(start:Lerp(goal, i / steps))
-		task.wait(0.11)
+		task.wait(MULTISTEP_DELAY)
 	end
-	print("Multi-step returned to base")
+	print("Multi-step done • delay " .. MULTISTEP_DELAY .. "s")
 end
 
-createButton("Instant Return to Base", Color3.fromRGB(32, 95, 65), function()
+createButton(teleportPage, "Instant Return to Base", Color3.fromRGB(32, 95, 65), function()
 	local base = getBase()
-	if base then
-		teleportTo(base)
-	else
-		warn("Baseplate not found")
-	end
+	if base then teleportTo(base) else warn("Base not found") end
 end)
 
-createButton("Smooth Tween to Base", Color3.fromRGB(35, 80, 140), function()
+createButton(teleportPage, "Smooth Tween to Base", Color3.fromRGB(35, 80, 140), function()
 	tweenToBase()
 end)
 
-createButton("Multi-Step Return to Base", Color3.fromRGB(85, 55, 130), function()
+createButton(teleportPage, "Multi-Step Return to Base", Color3.fromRGB(85, 55, 130), function()
 	multiStepToBase()
 end)
 
-createButton("Refresh Unique Eggs", Color3.fromRGB(45, 45, 70), function()
-	for _, child in ipairs(content:GetChildren()) do
+createButton(eggsPage, "Refresh Unique Eggs", Color3.fromRGB(45, 45, 70), function()
+	for _, child in ipairs(eggsPage:GetChildren()) do
 		if child:IsA("TextButton") and child.Text:find("Egg •") then
 			child:Destroy()
 		end
@@ -322,14 +392,14 @@ createButton("Refresh Unique Eggs", Color3.fromRGB(45, 45, 70), function()
 			unique[egg.Name] = true
 			count += 1
 
-			createButton("Egg • " .. egg.Name, Color3.fromRGB(38, 38, 52), function()
+			createButton(eggsPage, "Egg • " .. egg.Name, Color3.fromRGB(38, 38, 52), function()
 				teleportTo(egg)
 				print("→ " .. egg.Name)
 			end)
 		end
 	end
 
-	content.CanvasSize = UDim2.new(0, 0, 0, list.AbsoluteContentSize.Y + 12)
+	eggsPage.CanvasSize = UDim2.new(0, 0, 0, eggsList.AbsoluteContentSize.Y + 12)
 	print("Loaded " .. count .. " unique eggs")
 end)
 
@@ -397,4 +467,4 @@ task.spawn(function()
 	end
 end)
 
-print("Professional Egg Manager + Slider loaded")
+print("Tabbed Egg Manager loaded • Adjustable Tween + Multi-Step")
