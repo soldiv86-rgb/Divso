@@ -1,4 +1,4 @@
--- Divine Soul - Ride a Pet (Sidebar Layout)
+-- Divine Soul - Ride a Pet (with Player Select + Fixed Hop)
 
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
@@ -71,7 +71,7 @@ local RarityColors = {
 local RarityEggs = {
 	Ethereal = { "Cherub Egg" },
 	Divine = {"Blackhole Egg", "Galaxy Egg", "Aurora Egg" },
-	Mythic = { "Crystal Egg", "Skull Egg", "Dominus Egg", "Flaming Egg", "Sinister Egg", "Soul Egg" },
+	Mythic = { "Dominus Egg", "Flaming Egg", "Sinister egg", "Soul Egg" },
 	Legendary = { "Glass Egg", "Golden Egg" },
 	Epic = { "Mushroom Egg", "Flower Egg", "Slime Egg", "Ice Egg" },
 	Rare = { "Cracked Egg", "Easter Egg", "Stone Egg", "Leaf Egg" },
@@ -89,6 +89,8 @@ local espObjects = {}
 local espEnabled = Settings.ESPEnabled
 local autoRefreshEnabled = Settings.AutoRefreshEnabled
 local enabledRarities = Settings.EnabledRarities
+local selectedPlayer = nil          -- the player we want to go to
+local playerButtons = {}
 
 -------------------------------------------------
 -- CLEANUP
@@ -109,10 +111,9 @@ screenGui.ResetOnSpawn = false
 screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 screenGui.Parent = playerGui
 
--- Main Window
 local main = Instance.new("Frame")
-main.Size = UDim2.new(0, 780, 0, 500)
-main.Position = UDim2.new(0.5, -390, 0.5, -250)
+main.Size = UDim2.new(0, 780, 0, 520)
+main.Position = UDim2.new(0.5, -390, 0.5, -260)
 main.BackgroundColor3 = Color3.fromRGB(18, 18, 24)
 main.BorderSizePixel = 0
 main.Active = true
@@ -128,7 +129,7 @@ mainStroke.Thickness = 1
 mainStroke.Parent = main
 
 -------------------------------------------------
--- LEFT SIDEBAR (like BigFroot)
+-- LEFT SIDEBAR
 -------------------------------------------------
 local sidebar = Instance.new("Frame")
 sidebar.Size = UDim2.new(0, 170, 1, 0)
@@ -147,7 +148,6 @@ sideCover.BackgroundColor3 = Color3.fromRGB(14, 14, 20)
 sideCover.BorderSizePixel = 0
 sideCover.Parent = sidebar
 
--- Title
 local sideTitle = Instance.new("TextLabel")
 sideTitle.Size = UDim2.new(1, -20, 0, 28)
 sideTitle.Position = UDim2.new(0, 14, 0, 14)
@@ -170,7 +170,6 @@ sideSub.TextSize = 12
 sideSub.TextXAlignment = Enum.TextXAlignment.Left
 sideSub.Parent = sidebar
 
--- Sidebar Tabs
 local tabButtons = {}
 
 local function createSideTab(name, y)
@@ -195,10 +194,10 @@ local function createSideTab(name, y)
 end
 
 local tabMain = createSideTab("Main", 70)
-local tabHop = createSideTab("Server Hop", 112)
+local tabHop  = createSideTab("Server Hop", 112)
 
 -------------------------------------------------
--- RIGHT CONTENT AREA
+-- CONTENT
 -------------------------------------------------
 local content = Instance.new("Frame")
 content.Size = UDim2.new(1, -190, 1, -20)
@@ -206,7 +205,6 @@ content.Position = UDim2.new(0, 180, 0, 10)
 content.BackgroundTransparency = 1
 content.Parent = main
 
--- Header bar inside content
 local headerBar = Instance.new("Frame")
 headerBar.Size = UDim2.new(1, 0, 0, 40)
 headerBar.BackgroundColor3 = Color3.fromRGB(26, 26, 34)
@@ -228,7 +226,6 @@ headerTitle.TextSize = 15
 headerTitle.TextXAlignment = Enum.TextXAlignment.Left
 headerTitle.Parent = headerBar
 
--- Close button
 local closeBtn = Instance.new("TextButton")
 closeBtn.Size = UDim2.new(0, 30, 0, 26)
 closeBtn.Position = UDim2.new(1, -38, 0.5, -13)
@@ -245,7 +242,7 @@ closeCorner.CornerRadius = UDim.new(0, 7)
 closeCorner.Parent = closeBtn
 
 -------------------------------------------------
--- MAIN TAB CONTENT
+-- MAIN TAB
 -------------------------------------------------
 local mainContent = Instance.new("Frame")
 mainContent.Size = UDim2.new(1, 0, 1, -50)
@@ -253,7 +250,6 @@ mainContent.Position = UDim2.new(0, 0, 0, 48)
 mainContent.BackgroundTransparency = 1
 mainContent.Parent = content
 
--- Left controls
 local left = Instance.new("ScrollingFrame")
 left.Size = UDim2.new(0.42, 0, 1, 0)
 left.BackgroundTransparency = 1
@@ -266,7 +262,6 @@ local leftList = Instance.new("UIListLayout")
 leftList.Padding = UDim.new(0, 8)
 leftList.Parent = left
 
--- Right side (Rarity + Eggs)
 local right = Instance.new("Frame")
 right.Size = UDim2.new(0.56, 0, 1, 0)
 right.Position = UDim2.new(0.44, 0, 0, 0)
@@ -340,7 +335,7 @@ eggList.Padding = UDim.new(0, 6)
 eggList.Parent = eggScroll
 
 -------------------------------------------------
--- HOP TAB CONTENT
+-- HOP TAB (FIXED)
 -------------------------------------------------
 local hopContent = Instance.new("Frame")
 hopContent.Size = UDim2.new(1, 0, 1, -50)
@@ -369,7 +364,7 @@ hopDesc.TextSize = 14
 hopDesc.Parent = hopContent
 
 -------------------------------------------------
--- FLOATING BUTTON + NOTIFICATION
+-- FLOATING + NOTIF
 -------------------------------------------------
 local openBtn = Instance.new("TextButton")
 openBtn.Size = UDim2.new(0, 46, 0, 46)
@@ -634,14 +629,22 @@ local function createToggle(parent, text, default, callback)
 end
 
 -------------------------------------------------
--- TELEPORT
+-- TELEPORT HELPERS
 -------------------------------------------------
-local function getBase()
+local function getBase(targetPlayer)
+	targetPlayer = targetPlayer or player
 	local plots = workspace:FindFirstChild("Plots")
 	if not plots then return nil end
-	local plot = plots:FindFirstChild("Plot")
-	if not plot then return nil end
-	return plot:FindFirstChild("Baseplate")
+
+	-- Try common patterns
+	local plot = plots:FindFirstChild(targetPlayer.Name)
+		or plots:FindFirstChild(tostring(targetPlayer.UserId))
+		or plots:FindFirstChild("Plot")
+
+	if plot then
+		return plot:FindFirstChild("Baseplate") or plot:FindFirstChildWhichIsA("BasePart")
+	end
+	return nil
 end
 
 local function teleportTo(target)
@@ -654,21 +657,28 @@ local function teleportTo(target)
 end
 
 local function tweenToBase()
-	local base = getBase()
+	local base = getBase(selectedPlayer)
 	local char = player.Character
-	if not base or not char then return end
+	if not base or not char then
+		notify(selectedPlayer and "Player base not found" or "Your base not found")
+		return
+	end
 	local hrp = char:FindFirstChild("HumanoidRootPart")
 	if not hrp then return end
+
 	TweenService:Create(hrp, TweenInfo.new(Settings.TweenDuration, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
 		CFrame = base:GetPivot() * CFrame.new(0, 5, 0)
 	}):Play()
-	notify("Tweening to base...")
+	notify(selectedPlayer and ("Tweening to " .. selectedPlayer.Name) or "Tweening to your base...")
 end
 
 local function multiStepToBase()
-	local base = getBase()
+	local base = getBase(selectedPlayer)
 	local char = player.Character
-	if not base or not char then return end
+	if not base or not char then
+		notify(selectedPlayer and "Player base not found" or "Your base not found")
+		return
+	end
 	local hrp = char:FindFirstChild("HumanoidRootPart")
 	if not hrp then return end
 
@@ -678,7 +688,7 @@ local function multiStepToBase()
 	rayParams.FilterType = Enum.RaycastFilterType.Exclude
 	rayParams.FilterDescendantsInstances = {char}
 
-	notify("Multi-step started")
+	notify(selectedPlayer and ("Multi-step to " .. selectedPlayer.Name) or "Multi-step started")
 	for i = 1, Settings.MultiStepSteps do
 		local pos = start:Lerp(goal, i / Settings.MultiStepSteps)
 		local ray = workspace:Raycast(pos + Vector3.new(0, 5, 0), Vector3.new(0, -20, 0), rayParams)
@@ -688,6 +698,107 @@ local function multiStepToBase()
 	end
 	notify("Multi-step finished")
 end
+
+-------------------------------------------------
+-- PLAYER SELECTOR
+-------------------------------------------------
+local playerFrame = Instance.new("Frame")
+playerFrame.Size = UDim2.new(1, 0, 0, 120)
+playerFrame.BackgroundColor3 = Color3.fromRGB(28, 28, 38)
+playerFrame.BorderSizePixel = 0
+playerFrame.Parent = left
+
+local playerCorner = Instance.new("UICorner")
+playerCorner.CornerRadius = UDim.new(0, 8)
+playerCorner.Parent = playerFrame
+
+local playerTitle = Instance.new("TextLabel")
+playerTitle.Size = UDim2.new(1, -10, 0, 22)
+playerTitle.Position = UDim2.new(0, 8, 0, 4)
+playerTitle.BackgroundTransparency = 1
+playerTitle.Text = "Select Player Base"
+playerTitle.TextColor3 = Color3.fromRGB(190, 190, 220)
+playerTitle.Font = Enum.Font.GothamMedium
+playerTitle.TextSize = 12
+playerTitle.TextXAlignment = Enum.TextXAlignment.Left
+playerTitle.Parent = playerFrame
+
+local playerScroll = Instance.new("ScrollingFrame")
+playerScroll.Size = UDim2.new(1, -10, 1, -30)
+playerScroll.Position = UDim2.new(0, 5, 0, 26)
+playerScroll.BackgroundTransparency = 1
+playerScroll.BorderSizePixel = 0
+playerScroll.ScrollBarThickness = 3
+playerScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+playerScroll.Parent = playerFrame
+
+local playerList = Instance.new("UIListLayout")
+playerList.Padding = UDim.new(0, 4)
+playerList.Parent = playerScroll
+
+local function refreshPlayerList()
+	for _, btn in pairs(playerButtons) do
+		btn:Destroy()
+	end
+	playerButtons = {}
+
+	-- Add "Myself" option
+	local selfBtn = Instance.new("TextButton")
+	selfBtn.Size = UDim2.new(1, 0, 0, 26)
+	selfBtn.BackgroundColor3 = selectedPlayer == nil and Color3.fromRGB(50, 90, 160) or Color3.fromRGB(40, 40, 55)
+	selfBtn.Text = "  Myself (Your Base)"
+	selfBtn.TextColor3 = Color3.fromRGB(240, 240, 255)
+	selfBtn.Font = Enum.Font.Gotham
+	selfBtn.TextSize = 12
+	selfBtn.TextXAlignment = Enum.TextXAlignment.Left
+	selfBtn.AutoButtonColor = false
+	selfBtn.Parent = playerScroll
+
+	local sc = Instance.new("UICorner")
+	sc.CornerRadius = UDim.new(0, 6)
+	sc.Parent = selfBtn
+
+	selfBtn.MouseButton1Click:Connect(function()
+		selectedPlayer = nil
+		refreshPlayerList()
+		notify("Selected: Your own base")
+	end)
+	playerButtons["self"] = selfBtn
+
+	for _, plr in ipairs(Players:GetPlayers()) do
+		if plr ~= player then
+			local btn = Instance.new("TextButton")
+			btn.Size = UDim2.new(1, 0, 0, 26)
+			btn.BackgroundColor3 = selectedPlayer == plr and Color3.fromRGB(50, 90, 160) or Color3.fromRGB(40, 40, 55)
+			btn.Text = "  " .. plr.Name
+			btn.TextColor3 = Color3.fromRGB(240, 240, 255)
+			btn.Font = Enum.Font.Gotham
+			btn.TextSize = 12
+			btn.TextXAlignment = Enum.TextXAlignment.Left
+			btn.AutoButtonColor = false
+			btn.Parent = playerScroll
+
+			local c = Instance.new("UICorner")
+			c.CornerRadius = UDim.new(0, 6)
+			c.Parent = btn
+
+			btn.MouseButton1Click:Connect(function()
+				selectedPlayer = plr
+				refreshPlayerList()
+				notify("Selected: " .. plr.Name)
+			end)
+			playerButtons[plr.Name] = btn
+		end
+	end
+end
+
+Players.PlayerAdded:Connect(refreshPlayerList)
+Players.PlayerRemoving:Connect(function(plr)
+	if selectedPlayer == plr then
+		selectedPlayer = nil
+	end
+	refreshPlayerList()
+end)
 
 -------------------------------------------------
 -- EGGS
@@ -795,25 +906,47 @@ end
 updateRarityButtons()
 
 -------------------------------------------------
--- CONTROLS
+-- CONTROLS (Correct Order)
 -------------------------------------------------
 createSection(left, "MOVEMENT")
-createSlider(left, "Tween Speed (s)", 2, 12, Settings.TweenDuration, function(v) Settings.TweenDuration = v end)
-createSlider(left, "Multi-Step Delay (s)", 0.2, 1.2, Settings.MultiStepDelay, function(v) Settings.MultiStepDelay = v end)
 
 createButton(left, "Instant Return to Base", Color3.fromRGB(30, 100, 70), function()
-	local base = getBase()
-	if base then teleportTo(base) notify("Returned to base") else notify("Base not found") end
+	local base = getBase() -- always your own base
+	if base then
+		teleportTo(base)
+		notify("Returned to your base")
+	else
+		notify("Base not found")
+	end
 end)
-createButton(left, "Smooth Tween to Base", Color3.fromRGB(40, 85, 150), function() tweenToBase() end)
-createButton(left, "Multi-Step (Grounded)", Color3.fromRGB(90, 55, 140), function() multiStepToBase() end)
+
+-- Player selector goes right under Instant Return
+playerFrame.Parent = left
+
+createButton(left, "Smooth Tween to Base", Color3.fromRGB(40, 85, 150), function()
+	tweenToBase()
+end)
+
+createSlider(left, "Tween Speed (s)", 2, 12, Settings.TweenDuration, function(v)
+	Settings.TweenDuration = v
+end)
+
+createButton(left, "Multi-Step (Grounded)", Color3.fromRGB(90, 55, 140), function()
+	multiStepToBase()
+end)
+
+createSlider(left, "Multi-Step Delay (s)", 0.2, 1.2, Settings.MultiStepDelay, function(v)
+	Settings.MultiStepDelay = v
+end)
 
 createSection(left, "OPTIONS")
+
 createToggle(left, "ESP", Settings.ESPEnabled, function(state)
 	espEnabled = state
 	Settings.ESPEnabled = state
 	notify(state and "ESP enabled" or "ESP disabled")
 end)
+
 createToggle(left, "Auto Refresh", Settings.AutoRefreshEnabled, function(state)
 	autoRefreshEnabled = state
 	Settings.AutoRefreshEnabled = state
@@ -830,12 +963,12 @@ createButton(hopContent, "Server Hop Now", Color3.fromRGB(90, 50, 160), function
 end).Position = UDim2.new(0, 0, 0, 90)
 
 -------------------------------------------------
--- TAB SWITCHING
+-- TABS
 -------------------------------------------------
 local function setTab(name)
 	currentTab = name
 	mainContent.Visible = name == "Main"
-	hopContent.Visible = name == "Hop"
+	hopContent.Visible = name == "Server Hop"
 
 	for tabName, btn in pairs(tabButtons) do
 		if tabName == name then
@@ -984,7 +1117,7 @@ task.spawn(function()
 end)
 
 -------------------------------------------------
--- AUTO REFRESH
+-- AUTO REFRESH + PLAYER LIST
 -------------------------------------------------
 task.spawn(function()
 	while task.wait(Settings.AutoRefreshInterval) do
@@ -994,6 +1127,7 @@ task.spawn(function()
 	end
 end)
 
+refreshPlayerList()
 refreshEggs()
 notify("Divine Soul loaded")
-print("Divine Soul - Sidebar UI loaded")
+print("Divine Soul loaded - Player Select + Fixed Hop")
