@@ -1,4 +1,4 @@
--- Divine Soul - Full UI Restructure (Automation + Egg + Other + Settings)
+-- Divine Soul - Updated Automation Layout + Fixed Egg Tab
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
@@ -26,18 +26,20 @@ local Settings = {
 	GoMethod = "MultiTeleport",
 	ReturnMethod = "Tween",
 
-	-- Automation placeholders
+	-- Automation
 	AutoPlaceBestPet = false,
-	AutoBuyShop = false,
-	AutoPlaceEgg = false,
-	AutoHatch = false,
 	AutoFeed = false,
+	DesiredAge = 50,
+	AutoHatch = false,
+	AutoPlaceEgg = false,
 	MinEggKG = 30000,
+	SelectedEggs = {}, -- multi select
+	AutoBuy = false,
 
 	-- Webhook
 	WebhookEnabled = false,
 	WebhookURL = "",
-	WebhookInterval = 15, -- minutes
+	WebhookInterval = 15,
 
 	EnabledRarities = {
 		Ethereal = true, Divine = true, Mythic = true, Legendary = true,
@@ -68,7 +70,7 @@ end
 loadSettings()
 
 -------------------------------------------------
--- RARITY DATA
+-- RARITY + EGG DATA
 -------------------------------------------------
 local Rarities = {"Ethereal", "Divine", "Mythic", "Legendary", "Epic", "Rare", "Common"}
 local RarityPriority = {
@@ -94,6 +96,15 @@ local RarityEggs = {
 	Common = { "Brown Egg", "White Egg" },
 }
 
+-- Flatten all eggs alphabetically for the selector
+local AllEggs = {}
+for _, list in pairs(RarityEggs) do
+	for _, name in ipairs(list) do
+		table.insert(AllEggs, name)
+	end
+end
+table.sort(AllEggs)
+
 -------------------------------------------------
 -- STATE
 -------------------------------------------------
@@ -108,6 +119,7 @@ local autoFarmEnabled = Settings.AutoFarmEnabled
 local enabledRarities = Settings.EnabledRarities
 local goMethod = Settings.GoMethod
 local returnMethod = Settings.ReturnMethod
+local selectedEggs = Settings.SelectedEggs or {}
 
 local farmStartTime = 0
 local eggsCollected = 0
@@ -123,7 +135,7 @@ if CoreGui:FindFirstChild("EggSizeESP") then CoreGui.EggSizeESP:Destroy() end
 if playerGui:FindFirstChild("DivineSoulStatus") then playerGui.DivineSoulStatus:Destroy() end
 
 -------------------------------------------------
--- STATUS PANEL
+-- STATUS PANEL (same as before)
 -------------------------------------------------
 local statusGui = Instance.new("ScreenGui")
 statusGui.Name = "DivineSoulStatus"
@@ -138,18 +150,13 @@ statusPanel.BackgroundColor3 = Color3.fromRGB(14, 14, 16)
 statusPanel.BorderSizePixel = 0
 statusPanel.Visible = false
 statusPanel.Parent = statusGui
-
 Instance.new("UICorner", statusPanel).CornerRadius = UDim.new(0, 10)
 local ss = Instance.new("UIStroke", statusPanel)
 ss.Color = Color3.fromRGB(255, 140, 40)
 ss.Thickness = 1.2
-
 local sp = Instance.new("UIPadding", statusPanel)
-sp.PaddingTop = UDim.new(0, 12)
-sp.PaddingBottom = UDim.new(0, 12)
-sp.PaddingLeft = UDim.new(0, 14)
-sp.PaddingRight = UDim.new(0, 14)
-
+sp.PaddingTop = UDim.new(0, 12) sp.PaddingBottom = UDim.new(0, 12)
+sp.PaddingLeft = UDim.new(0, 14) sp.PaddingRight = UDim.new(0, 14)
 Instance.new("UIListLayout", statusPanel).Padding = UDim.new(0, 4)
 
 local function addStatusLabel(text, color, size)
@@ -176,10 +183,7 @@ local uptimeLabel = addStatusLabel("Uptime: 00:00")
 local settingsLabel = addStatusLabel("Go: Multi | Return: Tween | Hold: 0.75s", Color3.fromRGB(160, 140, 100))
 
 local function updateStatusPanel()
-	if not autoFarmEnabled then
-		statusPanel.Visible = false
-		return
-	end
+	if not autoFarmEnabled then statusPanel.Visible = false return end
 	statusPanel.Visible = true
 	statusLabel.Text = "Status: Running"
 	actionLabel.Text = "Action: " .. currentAction
@@ -209,8 +213,8 @@ screenGui.ResetOnSpawn = false
 screenGui.Parent = playerGui
 
 local main = Instance.new("Frame")
-main.Size = UDim2.new(0, 820, 0, 540)
-main.Position = UDim2.new(0.5, -410, 0.5, -270)
+main.Size = UDim2.new(0, 860, 0, 560)
+main.Position = UDim2.new(0.5, -430, 0.5, -280)
 main.BackgroundColor3 = Color3.fromRGB(12, 12, 14)
 main.BorderSizePixel = 0
 main.Active = true
@@ -283,7 +287,7 @@ local tabOther      = createSideTab("Other", 154)
 local tabSettings   = createSideTab("Settings", 196)
 
 -------------------------------------------------
--- CONTENT AREA
+-- CONTENT
 -------------------------------------------------
 local content = Instance.new("Frame")
 content.Size = UDim2.new(1, -175, 1, -20)
@@ -291,7 +295,6 @@ content.Position = UDim2.new(0, 168, 0, 10)
 content.BackgroundTransparency = 1
 content.Parent = main
 
--- Header (now just game name)
 local headerBar = Instance.new("Frame")
 headerBar.Size = UDim2.new(1, 0, 0, 40)
 headerBar.BackgroundColor3 = Color3.fromRGB(18, 18, 20)
@@ -350,23 +353,19 @@ local function createCard(parent, titleText)
 	card.BackgroundColor3 = Color3.fromRGB(18, 18, 20)
 	card.BorderSizePixel = 0
 	card.Parent = parent
-
 	Instance.new("UICorner", card).CornerRadius = UDim.new(0, 10)
 	local stroke = Instance.new("UIStroke", card)
 	stroke.Color = Color3.fromRGB(255, 140, 40)
 	stroke.Thickness = 1
 	stroke.Transparency = 0.7
-
 	local pad = Instance.new("UIPadding", card)
 	pad.PaddingTop = UDim.new(0, 12)
 	pad.PaddingBottom = UDim.new(0, 12)
 	pad.PaddingLeft = UDim.new(0, 12)
 	pad.PaddingRight = UDim.new(0, 12)
-
 	local list = Instance.new("UIListLayout", card)
 	list.Padding = UDim.new(0, 8)
 	list.SortOrder = Enum.SortOrder.LayoutOrder
-
 	local title = Instance.new("TextLabel")
 	title.Size = UDim2.new(1, 0, 0, 18)
 	title.BackgroundTransparency = 1
@@ -377,7 +376,6 @@ local function createCard(parent, titleText)
 	title.TextXAlignment = Enum.TextXAlignment.Left
 	title.LayoutOrder = 0
 	title.Parent = card
-
 	return card
 end
 
@@ -603,107 +601,238 @@ local function createMethodSelector(parent, labelText, currentValue, onChange)
 end
 
 -------------------------------------------------
--- AUTOMATION TAB
+-- AUTOMATION TAB (New Layout)
 -------------------------------------------------
-local autoScroll = Instance.new("ScrollingFrame")
-autoScroll.Size = UDim2.new(1, 0, 1, 0)
-autoScroll.BackgroundTransparency = 1
-autoScroll.BorderSizePixel = 0
-autoScroll.ScrollBarThickness = 4
-autoScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
-autoScroll.Parent = automationContent
+local autoLeft = Instance.new("ScrollingFrame")
+autoLeft.Size = UDim2.new(0.48, 0, 1, 0)
+autoLeft.BackgroundTransparency = 1
+autoLeft.BorderSizePixel = 0
+autoLeft.ScrollBarThickness = 4
+autoLeft.AutomaticCanvasSize = Enum.AutomaticSize.Y
+autoLeft.Parent = automationContent
 
-local autoList = Instance.new("UIListLayout", autoScroll)
-autoList.Padding = UDim.new(0, 12)
-autoList.SortOrder = Enum.SortOrder.LayoutOrder
+local autoLeftList = Instance.new("UIListLayout", autoLeft)
+autoLeftList.Padding = UDim.new(0, 12)
+local autoLeftPad = Instance.new("UIPadding", autoLeft)
+autoLeftPad.PaddingTop = UDim.new(0, 4)
+autoLeftPad.PaddingBottom = UDim.new(0, 10)
+autoLeftPad.PaddingLeft = UDim.new(0, 4)
+autoLeftPad.PaddingRight = UDim.new(0, 6)
 
-local autoPad = Instance.new("UIPadding", autoScroll)
-autoPad.PaddingTop = UDim.new(0, 4)
-autoPad.PaddingBottom = UDim.new(0, 10)
-autoPad.PaddingLeft = UDim.new(0, 4)
-autoPad.PaddingRight = UDim.new(0, 8)
+local autoRight = Instance.new("Frame")
+autoRight.Size = UDim2.new(0.50, 0, 1, 0)
+autoRight.Position = UDim2.new(0.50, 0, 0, 0)
+autoRight.BackgroundTransparency = 1
+autoRight.Parent = automationContent
 
--- Placeholder cards
-local placePetCard = createCard(autoScroll, "AUTO PLACE BEST PET")
-createToggle(placePetCard, "Enable Auto Place Best Pet", Settings.AutoPlaceBestPet, function(s)
+-- LEFT: Place Best Pet + Auto Feed
+local petFeedCard = createCard(autoLeft, "PETS")
+createToggle(petFeedCard, "Auto Place Best Pet", Settings.AutoPlaceBestPet, function(s)
 	Settings.AutoPlaceBestPet = s
 end)
-local placePetDesc = Instance.new("TextLabel")
-placePetDesc.Size = UDim2.new(1, 0, 0, 32)
-placePetDesc.BackgroundTransparency = 1
-placePetDesc.Text = "Places the pet with highest Money/sec from your backpack"
-placePetDesc.TextColor3 = Color3.fromRGB(160, 140, 100)
-placePetDesc.Font = Enum.Font.Gotham
-placePetDesc.TextSize = 12
-placePetDesc.TextXAlignment = Enum.TextXAlignment.Left
-placePetDesc.TextWrapped = true
-placePetDesc.Parent = placePetCard
-
-local buyShopCard = createCard(autoScroll, "AUTO BUY FROM SHOP")
-createToggle(buyShopCard, "Enable Auto Buy", Settings.AutoBuyShop, function(s)
-	Settings.AutoBuyShop = s
-end)
-local buyDesc = Instance.new("TextLabel")
-buyDesc.Size = UDim2.new(1, 0, 0, 32)
-buyDesc.BackgroundTransparency = 1
-buyDesc.Text = "Automatically buys food / track items from the shop"
-buyDesc.TextColor3 = Color3.fromRGB(160, 140, 100)
-buyDesc.Font = Enum.Font.Gotham
-buyDesc.TextSize = 12
-buyDesc.TextXAlignment = Enum.TextXAlignment.Left
-buyDesc.TextWrapped = true
-buyDesc.Parent = buyShopCard
-
-local placeEggCard = createCard(autoScroll, "AUTO PLACE EGG")
-createToggle(placeEggCard, "Enable Auto Place Egg", Settings.AutoPlaceEgg, function(s)
-	Settings.AutoPlaceEgg = s
-end)
-createSlider(placeEggCard, "Minimum KG", 1000, 100000, Settings.MinEggKG, function(v)
-	Settings.MinEggKG = v
-end)
-local placeEggDesc = Instance.new("TextLabel")
-placeEggDesc.Size = UDim2.new(1, 0, 0, 32)
-placeEggDesc.BackgroundTransparency = 1
-placeEggDesc.Text = "Only places eggs that are ≥ the minimum KG you set"
-placeEggDesc.TextColor3 = Color3.fromRGB(160, 140, 100)
-placeEggDesc.Font = Enum.Font.Gotham
-placeEggDesc.TextSize = 12
-placeEggDesc.TextXAlignment = Enum.TextXAlignment.Left
-placeEggDesc.TextWrapped = true
-placeEggDesc.Parent = placeEggCard
-
-local hatchCard = createCard(autoScroll, "AUTO HATCH")
-createToggle(hatchCard, "Enable Auto Hatch", Settings.AutoHatch, function(s)
-	Settings.AutoHatch = s
-end)
-local hatchDesc = Instance.new("TextLabel")
-hatchDesc.Size = UDim2.new(1, 0, 0, 32)
-hatchDesc.BackgroundTransparency = 1
-hatchDesc.Text = "Automatically hatches the egg when it is ready"
-hatchDesc.TextColor3 = Color3.fromRGB(160, 140, 100)
-hatchDesc.Font = Enum.Font.Gotham
-hatchDesc.TextSize = 12
-hatchDesc.TextXAlignment = Enum.TextXAlignment.Left
-hatchDesc.TextWrapped = true
-hatchDesc.Parent = hatchCard
-
-local feedCard = createCard(autoScroll, "AUTO FEED PETS")
-createToggle(feedCard, "Enable Auto Feed", Settings.AutoFeed, function(s)
+createToggle(petFeedCard, "Auto Feed", Settings.AutoFeed, function(s)
 	Settings.AutoFeed = s
 end)
-local feedDesc = Instance.new("TextLabel")
-feedDesc.Size = UDim2.new(1, 0, 0, 32)
-feedDesc.BackgroundTransparency = 1
-feedDesc.Text = "Feeds pets with food from backpack until desired age is reached"
-feedDesc.TextColor3 = Color3.fromRGB(160, 140, 100)
-feedDesc.Font = Enum.Font.Gotham
-feedDesc.TextSize = 12
-feedDesc.TextXAlignment = Enum.TextXAlignment.Left
-feedDesc.TextWrapped = true
-feedDesc.Parent = feedCard
+
+local ageFrame = Instance.new("Frame")
+ageFrame.Size = UDim2.new(1, 0, 0, 36)
+ageFrame.BackgroundColor3 = Color3.fromRGB(24, 24, 26)
+ageFrame.BorderSizePixel = 0
+ageFrame.Parent = petFeedCard
+Instance.new("UICorner", ageFrame).CornerRadius = UDim.new(0, 8)
+
+local ageLabel = Instance.new("TextLabel")
+ageLabel.Size = UDim2.new(0.5, 0, 1, 0)
+ageLabel.Position = UDim2.new(0, 10, 0, 0)
+ageLabel.BackgroundTransparency = 1
+ageLabel.Text = "Desired Age"
+ageLabel.TextColor3 = Color3.fromRGB(220, 160, 90)
+ageLabel.Font = Enum.Font.Gotham
+ageLabel.TextSize = 13
+ageLabel.TextXAlignment = Enum.TextXAlignment.Left
+ageLabel.Parent = ageFrame
+
+local ageBox = Instance.new("TextBox")
+ageBox.Size = UDim2.new(0, 70, 0, 24)
+ageBox.Position = UDim2.new(1, -80, 0.5, -12)
+ageBox.BackgroundColor3 = Color3.fromRGB(35, 30, 25)
+ageBox.Text = tostring(Settings.DesiredAge)
+ageBox.TextColor3 = Color3.fromRGB(255, 200, 120)
+ageBox.Font = Enum.Font.Gotham
+ageBox.TextSize = 13
+ageBox.ClearTextOnFocus = false
+ageBox.Parent = ageFrame
+Instance.new("UICorner", ageBox).CornerRadius = UDim.new(0, 6)
+
+ageBox.FocusLost:Connect(function()
+	local n = tonumber(ageBox.Text)
+	if n then
+		Settings.DesiredAge = math.clamp(n, 1, 999)
+		ageBox.Text = tostring(Settings.DesiredAge)
+		saveSettings()
+	else
+		ageBox.Text = tostring(Settings.DesiredAge)
+	end
+end)
+
+-- LEFT: Auto Hatch + Auto Place Egg
+local hatchPlaceCard = createCard(autoLeft, "EGGS")
+createToggle(hatchPlaceCard, "Auto Hatch", Settings.AutoHatch, function(s)
+	Settings.AutoHatch = s
+end)
+createToggle(hatchPlaceCard, "Auto Place Egg", Settings.AutoPlaceEgg, function(s)
+	Settings.AutoPlaceEgg = s
+end)
+createSlider(hatchPlaceCard, "Minimum KG", 1000, 100000, Settings.MinEggKG, function(v)
+	Settings.MinEggKG = v
+end)
+
+-- Multi-select egg list
+local eggSelectLabel = Instance.new("TextLabel")
+eggSelectLabel.Size = UDim2.new(1, 0, 0, 18)
+eggSelectLabel.BackgroundTransparency = 1
+eggSelectLabel.Text = "Select Eggs to Place (alphabetical)"
+eggSelectLabel.TextColor3 = Color3.fromRGB(200, 160, 100)
+eggSelectLabel.Font = Enum.Font.Gotham
+eggSelectLabel.TextSize = 12
+eggSelectLabel.TextXAlignment = Enum.TextXAlignment.Left
+eggSelectLabel.Parent = hatchPlaceCard
+
+local eggSelectScroll = Instance.new("ScrollingFrame")
+eggSelectScroll.Size = UDim2.new(1, 0, 0, 160)
+eggSelectScroll.BackgroundColor3 = Color3.fromRGB(22, 22, 24)
+eggSelectScroll.BorderSizePixel = 0
+eggSelectScroll.ScrollBarThickness = 4
+eggSelectScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+eggSelectScroll.Parent = hatchPlaceCard
+Instance.new("UICorner", eggSelectScroll).CornerRadius = UDim.new(0, 8)
+local eggSelectList = Instance.new("UIListLayout", eggSelectScroll)
+eggSelectList.Padding = UDim.new(0, 4)
+local eggSelectPad = Instance.new("UIPadding", eggSelectScroll)
+eggSelectPad.PaddingTop = UDim.new(0, 6)
+eggSelectPad.PaddingBottom = UDim.new(0, 6)
+eggSelectPad.PaddingLeft = UDim.new(0, 6)
+eggSelectPad.PaddingRight = UDim.new(0, 6)
+
+-- Create checkboxes for every egg
+for _, eggName in ipairs(AllEggs) do
+	local row = Instance.new("Frame")
+	row.Size = UDim2.new(1, 0, 0, 28)
+	row.BackgroundColor3 = Color3.fromRGB(30, 28, 26)
+	row.BorderSizePixel = 0
+	row.Parent = eggSelectScroll
+	Instance.new("UICorner", row).CornerRadius = UDim.new(0, 6)
+
+	local check = Instance.new("TextButton")
+	check.Size = UDim2.new(0, 22, 0, 22)
+	check.Position = UDim2.new(0, 6, 0.5, -11)
+	check.BackgroundColor3 = selectedEggs[eggName] and Color3.fromRGB(255, 140, 40) or Color3.fromRGB(50, 45, 40)
+	check.Text = selectedEggs[eggName] and "✓" or ""
+	check.TextColor3 = Color3.fromRGB(255, 255, 255)
+	check.Font = Enum.Font.GothamBold
+	check.TextSize = 14
+	check.AutoButtonColor = false
+	check.Parent = row
+	Instance.new("UICorner", check).CornerRadius = UDim.new(0, 5)
+
+	local nameLabel = Instance.new("TextLabel")
+	nameLabel.Size = UDim2.new(1, -40, 1, 0)
+	nameLabel.Position = UDim2.new(0, 36, 0, 0)
+	nameLabel.BackgroundTransparency = 1
+	nameLabel.Text = eggName
+	nameLabel.TextColor3 = Color3.fromRGB(230, 200, 150)
+	nameLabel.Font = Enum.Font.Gotham
+	nameLabel.TextSize = 13
+	nameLabel.TextXAlignment = Enum.TextXAlignment.Left
+	nameLabel.Parent = row
+
+	check.MouseButton1Click:Connect(function()
+		selectedEggs[eggName] = not selectedEggs[eggName]
+		check.BackgroundColor3 = selectedEggs[eggName] and Color3.fromRGB(255, 140, 40) or Color3.fromRGB(50, 45, 40)
+		check.Text = selectedEggs[eggName] and "✓" or ""
+		Settings.SelectedEggs = selectedEggs
+		saveSettings()
+	end)
+end
+
+-- RIGHT SIDE: AUTO BUY
+local buyCard = createCard(autoRight, "AUTO BUY")
+createToggle(buyCard, "Enable Auto Buy", Settings.AutoBuy, function(s)
+	Settings.AutoBuy = s
+end)
+
+-- FOOD SHOP
+local foodLabel = Instance.new("TextLabel")
+foodLabel.Size = UDim2.new(1, 0, 0, 18)
+foodLabel.BackgroundTransparency = 1
+foodLabel.Text = "FOOD SHOP"
+foodLabel.TextColor3 = Color3.fromRGB(255, 160, 50)
+foodLabel.Font = Enum.Font.GothamMedium
+foodLabel.TextSize = 13
+foodLabel.TextXAlignment = Enum.TextXAlignment.Left
+foodLabel.Parent = buyCard
+
+local foodScroll = Instance.new("ScrollingFrame")
+foodScroll.Size = UDim2.new(1, 0, 0, 140)
+foodScroll.BackgroundColor3 = Color3.fromRGB(22, 22, 24)
+foodScroll.BorderSizePixel = 0
+foodScroll.ScrollBarThickness = 4
+foodScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+foodScroll.Parent = buyCard
+Instance.new("UICorner", foodScroll).CornerRadius = UDim.new(0, 8)
+Instance.new("UIListLayout", foodScroll).Padding = UDim.new(0, 4)
+local foodPad = Instance.new("UIPadding", foodScroll)
+foodPad.PaddingTop = UDim.new(0, 6)
+foodPad.PaddingLeft = UDim.new(0, 6)
+foodPad.PaddingRight = UDim.new(0, 6)
+
+local foodPlaceholder = Instance.new("TextLabel")
+foodPlaceholder.Size = UDim2.new(1, -12, 0, 40)
+foodPlaceholder.BackgroundTransparency = 1
+foodPlaceholder.Text = "Food items will appear here\nonce you give me the shop info"
+foodPlaceholder.TextColor3 = Color3.fromRGB(140, 120, 90)
+foodPlaceholder.Font = Enum.Font.Gotham
+foodPlaceholder.TextSize = 12
+foodPlaceholder.TextWrapped = true
+foodPlaceholder.Parent = foodScroll
+
+-- TRACK SHOP
+local trackLabel = Instance.new("TextLabel")
+trackLabel.Size = UDim2.new(1, 0, 0, 18)
+trackLabel.BackgroundTransparency = 1
+trackLabel.Text = "TRACK SHOP"
+trackLabel.TextColor3 = Color3.fromRGB(255, 160, 50)
+trackLabel.Font = Enum.Font.GothamMedium
+trackLabel.TextSize = 13
+trackLabel.TextXAlignment = Enum.TextXAlignment.Left
+trackLabel.Parent = buyCard
+
+local trackScroll = Instance.new("ScrollingFrame")
+trackScroll.Size = UDim2.new(1, 0, 0, 140)
+trackScroll.BackgroundColor3 = Color3.fromRGB(22, 22, 24)
+trackScroll.BorderSizePixel = 0
+trackScroll.ScrollBarThickness = 4
+trackScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+trackScroll.Parent = buyCard
+Instance.new("UICorner", trackScroll).CornerRadius = UDim.new(0, 8)
+Instance.new("UIListLayout", trackScroll).Padding = UDim.new(0, 4)
+local trackPad = Instance.new("UIPadding", trackScroll)
+trackPad.PaddingTop = UDim.new(0, 6)
+trackPad.PaddingLeft = UDim.new(0, 6)
+trackPad.PaddingRight = UDim.new(0, 6)
+
+local trackPlaceholder = Instance.new("TextLabel")
+trackPlaceholder.Size = UDim2.new(1, -12, 0, 40)
+trackPlaceholder.BackgroundTransparency = 1
+trackPlaceholder.Text = "Track items will appear here\nonce you give me the shop info"
+trackPlaceholder.TextColor3 = Color3.fromRGB(140, 120, 90)
+trackPlaceholder.Font = Enum.Font.Gotham
+trackPlaceholder.TextSize = 12
+trackPlaceholder.TextWrapped = true
+trackPlaceholder.Parent = trackScroll
 
 -------------------------------------------------
--- EGG TAB
+-- EGG TAB (Fixed)
 -------------------------------------------------
 local eggLeft = Instance.new("ScrollingFrame")
 eggLeft.Size = UDim2.new(0.42, 0, 1, 0)
@@ -727,14 +856,11 @@ eggRight.Position = UDim2.new(0.44, 0, 0, 0)
 eggRight.BackgroundTransparency = 1
 eggRight.Parent = eggContent
 
--- Auto Farm Card
+-- Auto Farm
 local autoFarmCard = createCard(eggLeft, "AUTO FARM")
 createToggle(autoFarmCard, "Auto Farm", Settings.AutoFarmEnabled, function(state)
 	autoFarmEnabled = state
 	Settings.AutoFarmEnabled = state
-	if state then
-		-- start logic later
-	end
 end)
 createSlider(autoFarmCard, "Farm Delay (s)", 0.4, 4.0, Settings.AutoFarmDelay, function(v) Settings.AutoFarmDelay = v end)
 createSlider(autoFarmCard, "Collect Hold Time (s)", 0.3, 2.0, Settings.CollectHoldTime, function(v) Settings.CollectHoldTime = v end)
@@ -747,7 +873,7 @@ createMethodSelector(autoFarmCard, "Return to Base", returnMethod, function(val)
 	Settings.ReturnMethod = val
 end)
 
--- Movement Card
+-- Movement
 local movementCard = createCard(eggLeft, "MOVEMENT")
 createButton(movementCard, "Instant Return to Base", Color3.fromRGB(255, 120, 30), function() end)
 createButton(movementCard, "Multi-Teleport to Base", Color3.fromRGB(200, 90, 20), function() end)
@@ -755,7 +881,7 @@ createSlider(movementCard, "Multi-Teleport Delay (s)", 0.2, 1.2, Settings.MultiS
 createButton(movementCard, "Smooth Tween to Base", Color3.fromRGB(255, 140, 40), function() end)
 createSlider(movementCard, "Tween Speed (s)", 2, 12, Settings.TweenDuration, function(v) Settings.TweenDuration = v end)
 
--- Additionals Card
+-- Additionals
 local additionalsCard = createCard(eggLeft, "ADDITIONALS")
 createToggle(additionalsCard, "Auto Refresh", Settings.AutoRefreshEnabled, function(state)
 	autoRefreshEnabled = state
@@ -766,12 +892,12 @@ createToggle(additionalsCard, "Egg ESP", Settings.ESPEnabled, function(state)
 	Settings.ESPEnabled = state
 end)
 
--- Right side: Rarities + Eggs
+-- Right side Rarities
 local rarityCard = createCard(eggRight, "RARITIES")
-rarityCard.Size = UDim2.new(1, 0, 0, 160)
+rarityCard.Size = UDim2.new(1, 0, 0, 165)
 
 local rarityScroll = Instance.new("ScrollingFrame")
-rarityScroll.Size = UDim2.new(1, 0, 1, -30)
+rarityScroll.Size = UDim2.new(1, 0, 1, -28)
 rarityScroll.Position = UDim2.new(0, 0, 0, 26)
 rarityScroll.BackgroundTransparency = 1
 rarityScroll.BorderSizePixel = 0
@@ -780,10 +906,10 @@ rarityScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
 rarityScroll.Parent = rarityCard
 Instance.new("UIListLayout", rarityScroll).Padding = UDim.new(0, 4)
 
--- Egg list card
+-- Egg list
 local eggListCard = Instance.new("Frame")
-eggListCard.Size = UDim2.new(1, 0, 1, -175)
-eggListCard.Position = UDim2.new(0, 0, 0, 170)
+eggListCard.Size = UDim2.new(1, 0, 1, -180)
+eggListCard.Position = UDim2.new(0, 0, 0, 175)
 eggListCard.BackgroundColor3 = Color3.fromRGB(18, 18, 20)
 eggListCard.BorderSizePixel = 0
 eggListCard.Parent = eggRight
@@ -818,30 +944,15 @@ eggScroll.Parent = eggListCard
 Instance.new("UIListLayout", eggScroll).Padding = UDim.new(0, 6)
 
 -------------------------------------------------
--- OTHER TAB
+-- OTHER + SETTINGS (same as before)
 -------------------------------------------------
 local otherCard = createCard(otherContent, "SERVER")
 otherCard.Size = UDim2.new(0.5, 0, 0, 0)
-otherCard.Position = UDim2.new(0.25, 0, 0.2, 0)
-
+otherCard.Position = UDim2.new(0.25, 0, 0.25, 0)
 createButton(otherCard, "Server Hop Now", Color3.fromRGB(255, 120, 30), function()
 	TeleportService:Teleport(game.PlaceId, player)
 end)
 
-local otherDesc = Instance.new("TextLabel")
-otherDesc.Size = UDim2.new(1, 0, 0, 40)
-otherDesc.BackgroundTransparency = 1
-otherDesc.Text = "Teleport to a different server of this place."
-otherDesc.TextColor3 = Color3.fromRGB(160, 140, 100)
-otherDesc.Font = Enum.Font.Gotham
-otherDesc.TextSize = 13
-otherDesc.TextXAlignment = Enum.TextXAlignment.Left
-otherDesc.TextWrapped = true
-otherDesc.Parent = otherCard
-
--------------------------------------------------
--- SETTINGS TAB
--------------------------------------------------
 local settingsScroll = Instance.new("ScrollingFrame")
 settingsScroll.Size = UDim2.new(1, 0, 1, 0)
 settingsScroll.BackgroundTransparency = 1
@@ -849,12 +960,9 @@ settingsScroll.BorderSizePixel = 0
 settingsScroll.ScrollBarThickness = 4
 settingsScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
 settingsScroll.Parent = settingsContent
-
-local settingsList = Instance.new("UIListLayout", settingsScroll)
-settingsList.Padding = UDim.new(0, 12)
+Instance.new("UIListLayout", settingsScroll).Padding = UDim.new(0, 12)
 local settingsPad = Instance.new("UIPadding", settingsScroll)
 settingsPad.PaddingTop = UDim.new(0, 4)
-settingsPad.PaddingBottom = UDim.new(0, 10)
 settingsPad.PaddingLeft = UDim.new(0, 4)
 settingsPad.PaddingRight = UDim.new(0, 8)
 
@@ -888,7 +996,6 @@ urlBox.Parent = webhookCard
 Instance.new("UICorner", urlBox).CornerRadius = UDim.new(0, 8)
 local urlPad = Instance.new("UIPadding", urlBox)
 urlPad.PaddingLeft = UDim.new(0, 10)
-
 urlBox.FocusLost:Connect(function()
 	Settings.WebhookURL = urlBox.Text
 	saveSettings()
@@ -898,16 +1005,90 @@ createSlider(webhookCard, "Send Interval (minutes)", 5, 60, Settings.WebhookInte
 	Settings.WebhookInterval = v
 end)
 
-local webhookInfo = Instance.new("TextLabel")
-webhookInfo.Size = UDim2.new(1, 0, 0, 50)
-webhookInfo.BackgroundTransparency = 1
-webhookInfo.Text = "Sends hatch data (pet name, MPS, KG, luck) to your Discord.\nBlack & orange embed style."
-webhookInfo.TextColor3 = Color3.fromRGB(160, 140, 100)
-webhookInfo.Font = Enum.Font.Gotham
-webhookInfo.TextSize = 12
-webhookInfo.TextXAlignment = Enum.TextXAlignment.Left
-webhookInfo.TextWrapped = true
-webhookInfo.Parent = webhookCard
+-------------------------------------------------
+-- RARITY + EGG LIST LOGIC (Fixed)
+-------------------------------------------------
+local function updateRarityButtons()
+	for _, child in ipairs(rarityScroll:GetChildren()) do
+		if child:IsA("TextButton") then child:Destroy() end
+	end
+	for _, rarity in ipairs(Rarities) do
+		local btn = Instance.new("TextButton")
+		btn.Size = UDim2.new(1, 0, 0, 28)
+		btn.BackgroundColor3 = Color3.fromRGB(24, 24, 26)
+		btn.Text = ""
+		btn.AutoButtonColor = false
+		btn.Parent = rarityScroll
+		Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
+
+		local bar = Instance.new("Frame")
+		bar.Size = UDim2.new(0, 4, 1, -8)
+		bar.Position = UDim2.new(0, 4, 0, 4)
+		bar.BackgroundColor3 = Color3.fromRGB(255, 140, 40)
+		bar.BorderSizePixel = 0
+		bar.Visible = enabledRarities[rarity] == true
+		bar.Parent = btn
+		Instance.new("UICorner", bar).CornerRadius = UDim.new(0, 2)
+
+		local label = Instance.new("TextLabel")
+		label.Size = UDim2.new(1, -20, 1, 0)
+		label.Position = UDim2.new(0, 16, 0, 0)
+		label.BackgroundTransparency = 1
+		label.Text = rarity
+		label.TextColor3 = Color3.fromRGB(230, 180, 110)
+		label.Font = Enum.Font.Gotham
+		label.TextSize = 13
+		label.TextXAlignment = Enum.TextXAlignment.Left
+		label.Parent = btn
+
+		btn.MouseButton1Click:Connect(function()
+			enabledRarities[rarity] = not enabledRarities[rarity]
+			Settings.EnabledRarities = enabledRarities
+			bar.Visible = enabledRarities[rarity]
+			refreshEggs()
+			saveSettings()
+		end)
+	end
+end
+
+local function clearEggs()
+	for btn in pairs(eggButtons) do btn:Destroy() end
+	eggButtons = {}
+end
+
+local function refreshEggs()
+	clearEggs()
+	local rendered = workspace:FindFirstChild("RenderedEggs")
+	if not rendered then return end
+
+	local allowed = {}
+	for rarity, on in pairs(enabledRarities) do
+		if on then
+			for _, name in ipairs(RarityEggs[rarity] or {}) do
+				allowed[name] = rarity
+			end
+		end
+	end
+
+	for _, egg in ipairs(rendered:GetChildren()) do
+		local rarity = allowed[egg.Name]
+		if rarity and (currentSearch == "" or egg.Name:lower():find(currentSearch:lower(), 1, true)) then
+			local color = RarityColors[rarity] or Color3.fromRGB(60, 50, 40)
+			local btn = createButton(eggScroll, egg.Name, color, function()
+				-- teleport later
+			end)
+			eggButtons[btn] = true
+		end
+	end
+end
+
+eggSearch:GetPropertyChangedSignal("Text"):Connect(function()
+	currentSearch = eggSearch.Text
+	refreshEggs()
+end)
+
+updateRarityButtons()
+refreshEggs()
 
 -------------------------------------------------
 -- TAB SWITCHING
@@ -1006,4 +1187,4 @@ UserInputService.InputChanged:Connect(function(input)
 	end
 end)
 
-print("Divine Soul - New Tab Structure Loaded")
+print("Divine Soul - Automation Layout Updated + Egg Tab Fixed")
