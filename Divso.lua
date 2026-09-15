@@ -1,25 +1,26 @@
--- Fully Automatic Egg Teleport UI
--- Detects rarities from workspace.EggSpawns + eggs from RenderedEggs
+-- Combined: Egg Teleport UI + Egg Size ESP
 
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
--- Create ScreenGui
+-- Remove old UI if exists
+if playerGui:FindFirstChild("EggTeleportUI") then
+    playerGui.EggTeleportUI:Destroy()
+end
+
+-- ====================== UI ======================
 local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "AutoEggTeleportUI"
+screenGui.Name = "EggTeleportUI"
 screenGui.ResetOnSpawn = false
-screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 screenGui.Parent = playerGui
 
--- Main Frame
 local mainFrame = Instance.new("Frame")
-mainFrame.Name = "MainFrame"
-mainFrame.Size = UDim2.new(0, 260, 0, 420)
-mainFrame.Position = UDim2.new(0, 20, 0.5, -210)
-mainFrame.BackgroundColor3 = Color3.fromRGB(18, 18, 24)
-mainFrame.BorderSizePixel = 0
+mainFrame.Size = UDim2.new(0, 240, 0, 320)
+mainFrame.Position = UDim2.new(0, 20, 0.35, 0)
+mainFrame.BackgroundColor3 = Color3.fromRGB(22, 22, 28)
 mainFrame.Active = true
 mainFrame.Parent = screenGui
 
@@ -28,194 +29,198 @@ corner.CornerRadius = UDim.new(0, 12)
 corner.Parent = mainFrame
 
 local stroke = Instance.new("UIStroke")
-stroke.Color = Color3.fromRGB(70, 70, 110)
+stroke.Color = Color3.fromRGB(80, 80, 110)
 stroke.Thickness = 1.5
 stroke.Parent = mainFrame
 
 -- Title
 local title = Instance.new("TextLabel")
-title.Name = "Title"
 title.Size = UDim2.new(1, 0, 0, 36)
 title.BackgroundTransparency = 1
-title.Text = "🥚 Auto Egg Teleport"
+title.Text = "🥚 Egg Teleport + ESP"
 title.TextColor3 = Color3.fromRGB(255, 255, 255)
 title.Font = Enum.Font.GothamBold
 title.TextSize = 15
 title.Parent = mainFrame
 
--- Scrolling Frame
-local scroll = Instance.new("ScrollingFrame")
-scroll.Size = UDim2.new(1, -16, 1, -50)
-scroll.Position = UDim2.new(0, 8, 0, 42)
-scroll.BackgroundTransparency = 1
-scroll.BorderSizePixel = 0
-scroll.ScrollBarThickness = 5
-scroll.CanvasSize = UDim2.new(0, 0, 0, 0)
-scroll.Parent = mainFrame
-
-local listLayout = Instance.new("UIListLayout")
-listLayout.SortOrder = Enum.SortOrder.LayoutOrder
-listLayout.Padding = UDim.new(0, 6)
-listLayout.Parent = scroll
-
--- ====================== DRAGGABLE ======================
-local dragging, dragStart, startPos = false, nil, nil
-
+-- Dragging
+local dragging, dragStart, startPos
 title.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
         dragging = true
         dragStart = input.Position
         startPos = mainFrame.Position
     end
 end)
-
-title.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        dragging = false
-    end
+title.InputEnded:Connect(function()
+    dragging = false
 end)
-
 UserInputService.InputChanged:Connect(function(input)
-    if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+    if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
         local delta = input.Position - dragStart
         mainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
     end
 end)
--- =======================================================
+
+-- Scrolling frame
+local scroll = Instance.new("ScrollingFrame")
+scroll.Size = UDim2.new(1, -16, 1, -50)
+scroll.Position = UDim2.new(0, 8, 0, 42)
+scroll.BackgroundTransparency = 1
+scroll.ScrollBarThickness = 4
+scroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+scroll.Parent = mainFrame
+
+local listLayout = Instance.new("UIListLayout")
+listLayout.Padding = UDim.new(0, 6)
+listLayout.SortOrder = Enum.SortOrder.LayoutOrder
+listLayout.Parent = scroll
 
 local function teleportTo(target)
-    local character = player.Character
-    if not character then return end
-    local hrp = character:FindFirstChild("HumanoidRootPart")
-    if not hrp then return end
-    hrp.CFrame = target:GetPivot() * CFrame.new(0, 5, 0)
+    local char = player.Character
+    if not char then return end
+    local hrp = char:FindFirstChild("HumanoidRootPart")
+    if hrp and target then
+        hrp.CFrame = target:GetPivot() * CFrame.new(0, 5, 0)
+    end
 end
 
--- Rarity colors
-local RarityColors = {
-    Common = Color3.fromRGB(180, 180, 180),
-    Rare = Color3.fromRGB(70, 140, 255),
-    Epic = Color3.fromRGB(180, 70, 255),
-    Legendary = Color3.fromRGB(255, 170, 0),
-    Mythic = Color3.fromRGB(255, 50, 50),
-    Secret = Color3.fromRGB(255, 0, 100),
-    Exclusive = Color3.fromRGB(0, 255, 200)
-}
-
--- Create Baseplate button
-local function createBaseButton()
+local function createButton(text, color, callback)
     local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(1, 0, 0, 34)
-    btn.BackgroundColor3 = Color3.fromRGB(35, 95, 55)
-    btn.Text = "🏠 Teleport to Base"
-    btn.TextColor3 = Color3.fromRGB(220, 255, 220)
-    btn.Font = Enum.Font.GothamBold
+    btn.Size = UDim2.new(1, -4, 0, 34)
+    btn.BackgroundColor3 = color
+    btn.Text = text
+    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btn.Font = Enum.Font.Gotham
     btn.TextSize = 14
-    btn.LayoutOrder = 0
     btn.Parent = scroll
 
     local c = Instance.new("UICorner")
     c.CornerRadius = UDim.new(0, 8)
     c.Parent = btn
 
-    btn.MouseButton1Click:Connect(function()
-        local base = workspace:FindFirstChild("Plots") 
-            and workspace.Plots:FindFirstChild("Plot") 
-            and workspace.Plots.Plot:FindFirstChild("Baseplate")
-        if base then
-            teleportTo(base)
-        else
-            warn("Baseplate not found")
-        end
-    end)
+    btn.MouseButton1Click:Connect(callback)
+    return btn
 end
 
--- Refresh everything
-local function refresh()
-    -- Clear old buttons
+-- Baseplate Button
+createButton("🏠 Teleport to Base", Color3.fromRGB(40, 110, 70), function()
+    local base = workspace:FindFirstChild("Plots")
+        and workspace.Plots:FindFirstChild("Plot")
+        and workspace.Plots.Plot:FindFirstChild("Baseplate")
+    if base then
+        teleportTo(base)
+        print("Teleported to Base")
+    else
+        warn("Baseplate not found")
+    end
+end)
+
+-- Refresh Eggs Button
+createButton("🔄 Refresh Eggs", Color3.fromRGB(60, 60, 90), function()
     for _, child in ipairs(scroll:GetChildren()) do
-        if child:IsA("TextButton") and child.Text ~= "🏠 Teleport to Base" then
+        if child:IsA("TextButton") and child.Text:find("🥚") then
             child:Destroy()
         end
     end
 
-    local eggSpawns = workspace:FindFirstChild("EggSpawns")
-    local renderedEggs = workspace:FindFirstChild("RenderedEggs")
-
-    if not eggSpawns then 
-        warn("EggSpawns not found")
-        return 
+    local rendered = workspace:FindFirstChild("RenderedEggs")
+    if not rendered then
+        warn("RenderedEggs not found")
+        return
     end
 
-    local order = 1
+    local count = 0
+    for _, egg in ipairs(rendered:GetChildren()) do
+        count += 1
+        createButton("🥚 " .. egg.Name, Color3.fromRGB(50, 50, 70), function()
+            teleportTo(egg)
+            print("Teleported to → " .. egg.Name)
+        end)
+    end
 
-    -- Loop through every rarity folder (Common, Rare, Epic, etc.)
-    for _, rarityFolder in ipairs(eggSpawns:GetChildren()) do
-        if rarityFolder:IsA("Folder") or rarityFolder:IsA("Model") then
-            local rarityName = rarityFolder.Name
-            local color = RarityColors[rarityName] or Color3.fromRGB(200, 200, 200)
+    scroll.CanvasSize = UDim2.new(0, 0, 0, listLayout.AbsoluteContentSize.Y + 10)
+    print("Found " .. count .. " eggs")
+end)
 
-            -- Rarity Header
-            local header = Instance.new("TextLabel")
-            header.Size = UDim2.new(1, 0, 0, 26)
-            header.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
-            header.Text = "★ " .. rarityName
-            header.TextColor3 = color
-            header.Font = Enum.Font.GothamBold
-            header.TextSize = 14
-            header.LayoutOrder = order
-            header.Parent = scroll
-            order += 1
+-- ====================== ESP ======================
+local ESPFolder = Instance.new("Folder")
+ESPFolder.Name = "EggSizeESP"
+ESPFolder.Parent = game:GetService("CoreGui")
 
-            local hCorner = Instance.new("UICorner")
-            hCorner.CornerRadius = UDim.new(0, 6)
-            hCorner.Parent = header
+local function getEggSize(egg)
+    local size = egg:GetExtentsSize()
+    local volume = size.X * size.Y * size.Z
 
-            -- Now find eggs of this rarity that are currently rendered
-            if renderedEggs then
-                for _, egg in ipairs(renderedEggs:GetChildren()) do
-                    -- Simple check: if the egg name exists inside this rarity folder
-                    if rarityFolder:FindFirstChild(egg.Name) then
-                        local btn = Instance.new("TextButton")
-                        btn.Size = UDim2.new(1, 0, 0, 32)
-                        btn.BackgroundColor3 = Color3.fromRGB(40, 40, 55)
-                        btn.Text = "  " .. egg.Name
-                        btn.TextColor3 = color
-                        btn.Font = Enum.Font.Gotham
-                        btn.TextSize = 13
-                        btn.TextXAlignment = Enum.TextXAlignment.Left
-                        btn.LayoutOrder = order
-                        btn.Parent = scroll
-                        order += 1
+    if volume > 80 then
+        return "HUGE", Color3.fromRGB(255, 50, 50)
+    elseif volume > 40 then
+        return "Large", Color3.fromRGB(255, 170, 0)
+    elseif volume > 18 then
+        return "Medium", Color3.fromRGB(0, 255, 100)
+    else
+        return "Small", Color3.fromRGB(180, 180, 180)
+    end
+end
 
-                        local bCorner = Instance.new("UICorner")
-                        bCorner.CornerRadius = UDim.new(0, 6)
-                        bCorner.Parent = btn
+local function createESP(egg)
+    local id = egg.Name .. "_" .. egg:GetDebugId()
+    if ESPFolder:FindFirstChild(id) then return end
 
-                        btn.MouseButton1Click:Connect(function()
-                            teleportTo(egg)
-                            print("Teleported to", egg.Name, "(" .. rarityName .. ")")
-                        end)
-                    end
-                end
+    local part = egg:FindFirstChild("EggBase") or egg.PrimaryPart or egg:FindFirstChildWhichIsA("BasePart")
+    if not part then return end
+
+    local billboard = Instance.new("BillboardGui")
+    billboard.Name = id
+    billboard.Adornee = part
+    billboard.Size = UDim2.new(0, 130, 0, 40)
+    billboard.StudsOffset = Vector3.new(0, 3.5, 0)
+    billboard.AlwaysOnTop = true
+    billboard.Parent = ESPFolder
+
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(1, 0, 1, 0)
+    label.BackgroundTransparency = 1
+    label.TextStrokeTransparency = 0.25
+    label.Font = Enum.Font.GothamBold
+    label.TextSize = 14
+    label.Parent = billboard
+
+    local sizeText, color = getEggSize(egg)
+    label.Text = egg.Name .. "\n" .. sizeText
+    label.TextColor3 = color
+end
+
+local function updateESP()
+    local renderedEggs = workspace:FindFirstChild("RenderedEggs")
+    if not renderedEggs then return end
+
+    -- Remove old ESPs
+    for _, esp in ipairs(ESPFolder:GetChildren()) do
+        local stillExists = false
+        for _, egg in ipairs(renderedEggs:GetChildren()) do
+            if esp.Name:find(egg:GetDebugId()) then
+                stillExists = true
+                break
             end
+        end
+        if not stillExists then
+            esp:Destroy()
         end
     end
 
-    -- Update scroll size
-    task.wait()
-    scroll.CanvasSize = UDim2.new(0, 0, 0, listLayout.AbsoluteContentSize.Y + 12)
+    -- Create new ESPs
+    for _, egg in ipairs(renderedEggs:GetChildren()) do
+        createESP(egg)
+    end
 end
 
--- Create base button
-createBaseButton()
-
--- Auto refresh
+-- Update ESP every 0.7 seconds
 task.spawn(function()
-    while true do
-        refresh()
-        task.wait(1.8)
+    while task.wait(0.7) do
+        updateESP()
     end
 end)
 
-print("✅ Fully Automatic Egg UI loaded (using EggSpawns rarities)")
+print("✅ Combined Egg Teleport UI + Size ESP loaded!")
+print("Click 'Refresh Eggs' to load current eggs into the UI")
