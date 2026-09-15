@@ -21,8 +21,9 @@ local Settings = {
 	AutoRefreshEnabled = false,
 	AutoFarmEnabled = false,
 	AutoFarmDelay = 1.2,
-	ReturnMethod = "Tween", -- "Tween" or "MultiStep"
 	CollectHoldTime = 0.75,
+	GoMethod = "MultiTeleport",     -- "Tween" or "MultiTeleport"
+	ReturnMethod = "Tween",         -- "Tween" or "MultiTeleport"
 	EnabledRarities = {
 		Ethereal = true, Divine = true, Mythic = true, Legendary = true,
 		Epic = true, Rare = true, Common = true
@@ -87,6 +88,7 @@ local espEnabled = Settings.ESPEnabled
 local autoRefreshEnabled = Settings.AutoRefreshEnabled
 local autoFarmEnabled = Settings.AutoFarmEnabled
 local enabledRarities = Settings.EnabledRarities
+local goMethod = Settings.GoMethod
 local returnMethod = Settings.ReturnMethod
 
 -- Auto Farm Stats
@@ -117,9 +119,9 @@ statusGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 statusGui.Parent = playerGui
 
 local statusPanel = Instance.new("Frame")
-statusPanel.Size = UDim2.new(0, 280, 0, 0)
+statusPanel.Size = UDim2.new(0, 290, 0, 0)
 statusPanel.AutomaticSize = Enum.AutomaticSize.Y
-statusPanel.Position = UDim2.new(1, -300, 0, 20) -- Top right with margin
+statusPanel.Position = UDim2.new(1, -310, 0, 20)
 statusPanel.BackgroundColor3 = Color3.fromRGB(14, 14, 16)
 statusPanel.BorderSizePixel = 0
 statusPanel.Visible = false
@@ -168,7 +170,7 @@ local targetLabel = addStatusLabel("Target: -", Color3.fromRGB(220, 180, 120))
 local collectedLabel = addStatusLabel("Eggs Collected: 0", Color3.fromRGB(220, 180, 120))
 local lastRarityLabel = addStatusLabel("Last Rarity: -", Color3.fromRGB(220, 180, 120))
 local uptimeLabel = addStatusLabel("Uptime: 00:00", Color3.fromRGB(180, 180, 180))
-local settingsLabel = addStatusLabel("Delay: 1.2s  |  Return: Tween", Color3.fromRGB(160, 140, 100))
+local settingsLabel = addStatusLabel("Go: Multi  |  Return: Tween  |  Hold: 0.75s", Color3.fromRGB(160, 140, 100))
 
 local function updateStatusPanel()
 	if not autoFarmEnabled then
@@ -177,7 +179,7 @@ local function updateStatusPanel()
 	end
 	statusPanel.Visible = true
 
-	statusLabel.Text = "Status: " .. (autoFarmEnabled and "Running" or "Idle")
+	statusLabel.Text = "Status: Running"
 	actionLabel.Text = "Action: " .. currentAction
 	targetLabel.Text = "Target: " .. currentTarget
 	collectedLabel.Text = "Eggs Collected: " .. eggsCollected
@@ -188,10 +190,12 @@ local function updateStatusPanel()
 	local secs = elapsed % 60
 	uptimeLabel.Text = string.format("Uptime: %02d:%02d", mins, secs)
 
-	settingsLabel.Text = string.format("Delay: %.1fs  |  Return: %s", Settings.AutoFarmDelay, returnMethod)
+	settingsLabel.Text = string.format("Go: %s  |  Return: %s  |  Hold: %.2fs",
+		goMethod == "MultiTeleport" and "Multi" or "Tween",
+		returnMethod == "MultiTeleport" and "Multi" or "Tween",
+		Settings.CollectHoldTime)
 end
 
--- Live updater
 task.spawn(function()
 	while task.wait(0.5) do
 		if autoFarmEnabled then
@@ -701,6 +705,74 @@ local function createToggle(parent, text, default, callback)
 	end)
 	return frame
 end
+
+local function createMethodSelector(parent, labelText, currentValue, onChange)
+	local frame = Instance.new("Frame")
+	frame.Size = UDim2.new(1, 0, 0, 34)
+	frame.BackgroundColor3 = Color3.fromRGB(24, 24, 26)
+	frame.BorderSizePixel = 0
+	frame.Parent = parent
+	local c = Instance.new("UICorner")
+	c.CornerRadius = UDim.new(0, 8)
+	c.Parent = frame
+
+	local label = Instance.new("TextLabel")
+	label.Size = UDim2.new(0.42, 0, 1, 0)
+	label.Position = UDim2.new(0, 10, 0, 0)
+	label.BackgroundTransparency = 1
+	label.Text = labelText
+	label.TextColor3 = Color3.fromRGB(230, 180, 110)
+	label.Font = Enum.Font.Gotham
+	label.TextSize = 12
+	label.TextXAlignment = Enum.TextXAlignment.Left
+	label.Parent = frame
+
+	local tweenBtn = Instance.new("TextButton")
+	tweenBtn.Size = UDim2.new(0.26, -4, 0, 24)
+	tweenBtn.Position = UDim2.new(0.45, 0, 0.5, -12)
+	tweenBtn.BackgroundColor3 = currentValue == "Tween" and Color3.fromRGB(255, 140, 40) or Color3.fromRGB(40, 35, 30)
+	tweenBtn.Text = "Tween"
+	tweenBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+	tweenBtn.Font = Enum.Font.GothamMedium
+	tweenBtn.TextSize = 11
+	tweenBtn.AutoButtonColor = false
+	tweenBtn.Parent = frame
+	local tc = Instance.new("UICorner")
+	tc.CornerRadius = UDim.new(0, 6)
+	tc.Parent = tweenBtn
+
+	local multiBtn = Instance.new("TextButton")
+	multiBtn.Size = UDim2.new(0.26, -4, 0, 24)
+	multiBtn.Position = UDim2.new(0.72, 0, 0.5, -12)
+	multiBtn.BackgroundColor3 = currentValue == "MultiTeleport" and Color3.fromRGB(255, 140, 40) or Color3.fromRGB(40, 35, 30)
+	multiBtn.Text = "Multi"
+	multiBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+	multiBtn.Font = Enum.Font.GothamMedium
+	multiBtn.TextSize = 11
+	multiBtn.AutoButtonColor = false
+	multiBtn.Parent = frame
+	local mc = Instance.new("UICorner")
+	mc.CornerRadius = UDim.new(0, 6)
+	mc.Parent = multiBtn
+
+	local function update()
+		tweenBtn.BackgroundColor3 = currentValue == "Tween" and Color3.fromRGB(255, 140, 40) or Color3.fromRGB(40, 35, 30)
+		multiBtn.BackgroundColor3 = currentValue == "MultiTeleport" and Color3.fromRGB(255, 140, 40) or Color3.fromRGB(40, 35, 30)
+	end
+
+	tweenBtn.MouseButton1Click:Connect(function()
+		currentValue = "Tween"
+		onChange("Tween")
+		update()
+	end)
+	multiBtn.MouseButton1Click:Connect(function()
+		currentValue = "MultiTeleport"
+		onChange("MultiTeleport")
+		update()
+	end)
+
+	return frame
+end
 -------------------------------------------------
 -- TELEPORT HELPERS
 -------------------------------------------------
@@ -745,28 +817,29 @@ local function teleportTo(target)
 	end
 end
 
-local function tweenToBase()
-	local base = getBase()
+local function tweenTo(target)
 	local char = player.Character
-	if not base or not char then return end
+	if not char or not target then return end
 	local hrp = char:FindFirstChild("HumanoidRootPart")
 	if not hrp then return end
 	TweenService:Create(hrp, TweenInfo.new(Settings.TweenDuration, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-		CFrame = base:GetPivot() * CFrame.new(0, 5, 0)
+		CFrame = target:GetPivot() * CFrame.new(0, 5, 0)
 	}):Play()
+	task.wait(Settings.TweenDuration)
 end
 
-local function multiStepToBase()
-	local base = getBase()
+local function multiTeleportTo(target)
 	local char = player.Character
-	if not base or not char then return end
+	if not char or not target then return end
 	local hrp = char:FindFirstChild("HumanoidRootPart")
 	if not hrp then return end
+
 	local start = hrp.Position
-	local goal = (base:GetPivot() * CFrame.new(0, 3, 0)).Position
+	local goal = (target:GetPivot() * CFrame.new(0, 3, 0)).Position
 	local rayParams = RaycastParams.new()
 	rayParams.FilterType = Enum.RaycastFilterType.Exclude
 	rayParams.FilterDescendantsInstances = {char}
+
 	for i = 1, Settings.MultiStepSteps do
 		local pos = start:Lerp(goal, i / Settings.MultiStepSteps)
 		local ray = workspace:Raycast(pos + Vector3.new(0, 5, 0), Vector3.new(0, -20, 0), rayParams)
@@ -778,20 +851,29 @@ local function multiStepToBase()
 	end
 end
 
-local function returnToBase()
-	if returnMethod == "MultiStep" then
-		multiStepToBase()
+local function goToTarget(target)
+	if goMethod == "MultiTeleport" then
+		multiTeleportTo(target)
 	else
-		tweenToBase()
+		tweenTo(target)
 	end
 end
 
--- Improved collect (ProximityPrompt hold)
+local function returnToBase()
+	local base = getBase()
+	if not base then return end
+	if returnMethod == "MultiTeleport" then
+		multiTeleportTo(base)
+	else
+		tweenTo(base)
+	end
+end
+
+-- Collect with adjustable hold time
 local function collectEgg(egg)
 	currentAction = "Collecting..."
 	updateStatusPanel()
 
-	-- Try ProximityPrompt first (best method)
 	local prompt = egg:FindFirstChildWhichIsA("ProximityPrompt", true)
 	if prompt then
 		pcall(function()
@@ -799,16 +881,15 @@ local function collectEgg(egg)
 			task.wait(Settings.CollectHoldTime)
 			prompt:InputHoldEnd()
 		end)
-		return true
+		return
 	end
 
-	-- Fallback: hold E key
+	-- Fallback
 	pcall(function()
 		VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.E, false, game)
 		task.wait(Settings.CollectHoldTime)
 		VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
 	end)
-	return true
 end
 -------------------------------------------------
 -- AUTO FARM LOGIC
@@ -816,9 +897,7 @@ end
 local function getEggRarity(eggName)
 	for rarity, names in pairs(RarityEggs) do
 		for _, name in ipairs(names) do
-			if name == eggName then
-				return rarity
-			end
+			if name == eggName then return rarity end
 		end
 	end
 	return "Unknown"
@@ -828,9 +907,7 @@ local function getBestEgg()
 	local rendered = workspace:FindFirstChild("RenderedEggs")
 	if not rendered then return nil end
 
-	local bestEgg = nil
-	local bestPriority = -1
-
+	local bestEgg, bestPriority = nil, -1
 	for _, egg in ipairs(rendered:GetChildren()) do
 		local rarity = getEggRarity(egg.Name)
 		if enabledRarities[rarity] then
@@ -860,19 +937,17 @@ local function startAutoFarm()
 			if egg and egg.Parent then
 				local rarity = getEggRarity(egg.Name)
 				currentTarget = egg.Name .. " (" .. rarity .. ")"
-				currentAction = "Teleporting to egg"
+				currentAction = "Going to egg"
 				updateStatusPanel()
 
-				teleportTo(egg)
-				task.wait(0.3)
+				goToTarget(egg)
+				task.wait(0.25)
 
 				currentAction = "Holding to collect"
 				updateStatusPanel()
 				collectEgg(egg)
+				task.wait(0.2)
 
-				task.wait(0.25)
-
-				-- Count it
 				eggsCollected += 1
 				lastCollectedRarity = rarity
 
@@ -894,12 +969,10 @@ local function startAutoFarm()
 	end)
 end
 -------------------------------------------------
--- EGGS
+-- EGGS + RARITY (same as before)
 -------------------------------------------------
 local function clearEggs()
-	for btn in pairs(eggButtons) do
-		btn:Destroy()
-	end
+	for btn in pairs(eggButtons) do btn:Destroy() end
 	eggButtons = {}
 end
 
@@ -919,14 +992,12 @@ local function refreshEggs()
 
 	for _, egg in ipairs(rendered:GetChildren()) do
 		local rarity = allowed[egg.Name]
-		if rarity then
-			if currentSearch == "" or egg.Name:lower():find(currentSearch:lower(), 1, true) then
-				local color = RarityColors[rarity] or Color3.fromRGB(60, 50, 40)
-				local btn = createButton(eggScroll, egg.Name, color, function()
-					teleportTo(egg)
-				end)
-				eggButtons[btn] = true
-			end
+		if rarity and (currentSearch == "" or egg.Name:lower():find(currentSearch:lower(), 1, true)) then
+			local color = RarityColors[rarity] or Color3.fromRGB(60, 50, 40)
+			local btn = createButton(eggScroll, egg.Name, color, function()
+				teleportTo(egg)
+			end)
+			eggButtons[btn] = true
 		end
 	end
 end
@@ -935,9 +1006,7 @@ eggSearch:GetPropertyChangedSignal("Text"):Connect(function()
 	currentSearch = eggSearch.Text
 	refreshEggs()
 end)
--------------------------------------------------
--- RARITY BUTTONS
--------------------------------------------------
+
 local function updateRarityButtons()
 	for _, child in ipairs(rarityScroll:GetChildren()) do
 		if child:IsA("TextButton") then child:Destroy() end
@@ -988,16 +1057,12 @@ updateRarityButtons()
 -------------------------------------------------
 -- CONTROLS
 -------------------------------------------------
-
--- AUTO FARM CARD
 local autoFarmCard = createCard(left, "AUTO FARM")
 
 createToggle(autoFarmCard, "Auto Farm", Settings.AutoFarmEnabled, function(state)
 	autoFarmEnabled = state
 	Settings.AutoFarmEnabled = state
-	if state then
-		startAutoFarm()
-	end
+	if state then startAutoFarm() end
 	saveSettings()
 end)
 
@@ -1005,70 +1070,19 @@ createSlider(autoFarmCard, "Farm Delay (s)", 0.4, 4.0, Settings.AutoFarmDelay, f
 	Settings.AutoFarmDelay = v
 end)
 
--- Return Method selector
-local returnFrame = Instance.new("Frame")
-returnFrame.Size = UDim2.new(1, 0, 0, 34)
-returnFrame.BackgroundColor3 = Color3.fromRGB(24, 24, 26)
-returnFrame.BorderSizePixel = 0
-returnFrame.Parent = autoFarmCard
-local rfCorner = Instance.new("UICorner")
-rfCorner.CornerRadius = UDim.new(0, 8)
-rfCorner.Parent = returnFrame
+createSlider(autoFarmCard, "Collect Hold Time (s)", 0.3, 2.0, Settings.CollectHoldTime, function(v)
+	Settings.CollectHoldTime = v
+end)
 
-local returnLabel = Instance.new("TextLabel")
-returnLabel.Size = UDim2.new(0.45, 0, 1, 0)
-returnLabel.Position = UDim2.new(0, 10, 0, 0)
-returnLabel.BackgroundTransparency = 1
-returnLabel.Text = "Return Method"
-returnLabel.TextColor3 = Color3.fromRGB(230, 180, 110)
-returnLabel.Font = Enum.Font.Gotham
-returnLabel.TextSize = 12
-returnLabel.TextXAlignment = Enum.TextXAlignment.Left
-returnLabel.Parent = returnFrame
-
-local tweenBtn = Instance.new("TextButton")
-tweenBtn.Size = UDim2.new(0.25, -4, 0, 24)
-tweenBtn.Position = UDim2.new(0.48, 0, 0.5, -12)
-tweenBtn.BackgroundColor3 = returnMethod == "Tween" and Color3.fromRGB(255, 140, 40) or Color3.fromRGB(40, 35, 30)
-tweenBtn.Text = "Tween"
-tweenBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-tweenBtn.Font = Enum.Font.GothamMedium
-tweenBtn.TextSize = 11
-tweenBtn.AutoButtonColor = false
-tweenBtn.Parent = returnFrame
-local tbCorner = Instance.new("UICorner")
-tbCorner.CornerRadius = UDim.new(0, 6)
-tbCorner.Parent = tweenBtn
-
-local multiBtn = Instance.new("TextButton")
-multiBtn.Size = UDim2.new(0.25, -4, 0, 24)
-multiBtn.Position = UDim2.new(0.74, 0, 0.5, -12)
-multiBtn.BackgroundColor3 = returnMethod == "MultiStep" and Color3.fromRGB(255, 140, 40) or Color3.fromRGB(40, 35, 30)
-multiBtn.Text = "Multi"
-multiBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-multiBtn.Font = Enum.Font.GothamMedium
-multiBtn.TextSize = 11
-multiBtn.AutoButtonColor = false
-multiBtn.Parent = returnFrame
-local mbCorner = Instance.new("UICorner")
-mbCorner.CornerRadius = UDim.new(0, 6)
-mbCorner.Parent = multiBtn
-
-local function updateReturnButtons()
-	tweenBtn.BackgroundColor3 = returnMethod == "Tween" and Color3.fromRGB(255, 140, 40) or Color3.fromRGB(40, 35, 30)
-	multiBtn.BackgroundColor3 = returnMethod == "MultiStep" and Color3.fromRGB(255, 140, 40) or Color3.fromRGB(40, 35, 30)
-end
-
-tweenBtn.MouseButton1Click:Connect(function()
-	returnMethod = "Tween"
-	Settings.ReturnMethod = "Tween"
-	updateReturnButtons()
+createMethodSelector(autoFarmCard, "Go to Egg", goMethod, function(val)
+	goMethod = val
+	Settings.GoMethod = val
 	saveSettings()
 end)
-multiBtn.MouseButton1Click:Connect(function()
-	returnMethod = "MultiStep"
-	Settings.ReturnMethod = "MultiStep"
-	updateReturnButtons()
+
+createMethodSelector(autoFarmCard, "Return to Base", returnMethod, function(val)
+	returnMethod = val
+	Settings.ReturnMethod = val
 	saveSettings()
 end)
 
@@ -1077,20 +1091,20 @@ local movementCard = createCard(left, "MOVEMENT")
 
 createButton(movementCard, "Instant Return to Base", Color3.fromRGB(255, 120, 30), function()
 	local base = getBase()
-	if base then
-		teleportTo(base)
-	end
+	if base then teleportTo(base) end
 end)
 
-createButton(movementCard, "Multi-Step (Grounded)", Color3.fromRGB(200, 90, 20), function()
-	multiStepToBase()
+createButton(movementCard, "Multi-Teleport to Base", Color3.fromRGB(200, 90, 20), function()
+	local base = getBase()
+	if base then multiTeleportTo(base) end
 end)
-createSlider(movementCard, "Multi-Step Delay (s)", 0.2, 1.2, Settings.MultiStepDelay, function(v)
+createSlider(movementCard, "Multi-Teleport Delay (s)", 0.2, 1.2, Settings.MultiStepDelay, function(v)
 	Settings.MultiStepDelay = v
 end)
 
 createButton(movementCard, "Smooth Tween to Base", Color3.fromRGB(255, 140, 40), function()
-	tweenToBase()
+	local base = getBase()
+	if base then tweenTo(base) end
 end)
 createSlider(movementCard, "Tween Speed (s)", 2, 12, Settings.TweenDuration, function(v)
 	Settings.TweenDuration = v
@@ -1117,7 +1131,7 @@ createButton(hopContent, "Server Hop Now", Color3.fromRGB(255, 120, 30), functio
 	TeleportService:Teleport(game.PlaceId, player)
 end).Position = UDim2.new(0, 0, 0, 90)
 -------------------------------------------------
--- TABS
+-- TABS + CLOSE/OPEN + DRAG (same as before)
 -------------------------------------------------
 local function setTab(name)
 	currentTab = name
@@ -1136,9 +1150,7 @@ end
 tabMain.MouseButton1Click:Connect(function() setTab("Main") end)
 tabHop.MouseButton1Click:Connect(function() setTab("Server Hop") end)
 setTab("Main")
--------------------------------------------------
--- CLOSE / OPEN + DRAG
--------------------------------------------------
+
 closeBtn.MouseButton1Click:Connect(function()
 	main.Visible = false
 	isOpen = false
@@ -1192,7 +1204,7 @@ UserInputService.InputChanged:Connect(function(input)
 	end
 end)
 -------------------------------------------------
--- ESP (only selected rarities)
+-- ESP
 -------------------------------------------------
 local ESPFolder = Instance.new("Folder")
 ESPFolder.Name = "EggSizeESP"
@@ -1208,14 +1220,11 @@ local function getSizeLabel(egg)
 end
 
 local function isEggAllowed(egg)
-	local rarity = getEggRarity(egg.Name)
-	return enabledRarities[rarity] == true
+	return enabledRarities[getEggRarity(egg.Name)] == true
 end
 
 local function createESP(egg)
-	if not espEnabled then return end
-	if not isEggAllowed(egg) then return end
-
+	if not espEnabled or not isEggAllowed(egg) then return end
 	local id = tostring(egg:GetDebugId())
 	if espObjects[id] then return end
 	local part = egg:FindFirstChild("EggBase") or egg.PrimaryPart or egg:FindFirstChildWhichIsA("BasePart")
@@ -1280,9 +1289,6 @@ task.spawn(function()
 	end
 end)
 
-if autoFarmEnabled then
-	startAutoFarm()
-end
-
+if autoFarmEnabled then startAutoFarm() end
 refreshEggs()
-print("Divine Soul loaded - Auto Farm + Status Panel + Better Collect")
+print("Divine Soul loaded - Go/Return Method + Collect Hold Slider")
