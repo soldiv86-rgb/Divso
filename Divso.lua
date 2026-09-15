@@ -629,21 +629,47 @@ local function createToggle(parent, text, default, callback)
 end
 
 -------------------------------------------------
--- TELEPORT HELPERS
+-- TELEPORT HELPERS (Improved)
 -------------------------------------------------
 local function getBase(targetPlayer)
 	targetPlayer = targetPlayer or player
+
 	local plots = workspace:FindFirstChild("Plots")
 	if not plots then return nil end
 
-	-- Try common patterns
+	-- Try different common naming patterns
 	local plot = plots:FindFirstChild(targetPlayer.Name)
 		or plots:FindFirstChild(tostring(targetPlayer.UserId))
-		or plots:FindFirstChild("Plot")
+		or plots:FindFirstChild("Plot_" .. targetPlayer.Name)
+		or plots:FindFirstChild("Plot" .. targetPlayer.Name)
+
+	-- Fallback: look through all plots for a matching owner
+	if not plot then
+		for _, p in ipairs(plots:GetChildren()) do
+			local owner = p:FindFirstChild("Owner") or p:GetAttribute("Owner")
+			if owner then
+				if typeof(owner) == "Instance" and owner == targetPlayer then
+					plot = p
+					break
+				elseif typeof(owner) == "string" and owner == targetPlayer.Name then
+					plot = p
+					break
+				end
+			end
+		end
+	end
+
+	-- Last fallback (your original method)
+	if not plot then
+		plot = plots:FindFirstChild("Plot")
+	end
 
 	if plot then
-		return plot:FindFirstChild("Baseplate") or plot:FindFirstChildWhichIsA("BasePart")
+		return plot:FindFirstChild("Baseplate")
+			or plot:FindFirstChild("Base")
+			or plot:FindFirstChildWhichIsA("BasePart")
 	end
+
 	return nil
 end
 
@@ -660,7 +686,7 @@ local function tweenToBase()
 	local base = getBase(selectedPlayer)
 	local char = player.Character
 	if not base or not char then
-		notify(selectedPlayer and "Player base not found" or "Your base not found")
+		notify(selectedPlayer and ("Base of " .. selectedPlayer.Name .. " not found") or "Your base not found")
 		return
 	end
 	local hrp = char:FindFirstChild("HumanoidRootPart")
@@ -669,14 +695,15 @@ local function tweenToBase()
 	TweenService:Create(hrp, TweenInfo.new(Settings.TweenDuration, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
 		CFrame = base:GetPivot() * CFrame.new(0, 5, 0)
 	}):Play()
-	notify(selectedPlayer and ("Tweening to " .. selectedPlayer.Name) or "Tweening to your base...")
+
+	notify(selectedPlayer and ("Tweening to " .. selectedPlayer.Name .. "'s base") or "Tweening to your base...")
 end
 
 local function multiStepToBase()
 	local base = getBase(selectedPlayer)
 	local char = player.Character
 	if not base or not char then
-		notify(selectedPlayer and "Player base not found" or "Your base not found")
+		notify(selectedPlayer and ("Base of " .. selectedPlayer.Name .. " not found") or "Your base not found")
 		return
 	end
 	local hrp = char:FindFirstChild("HumanoidRootPart")
@@ -689,10 +716,13 @@ local function multiStepToBase()
 	rayParams.FilterDescendantsInstances = {char}
 
 	notify(selectedPlayer and ("Multi-step to " .. selectedPlayer.Name) or "Multi-step started")
+
 	for i = 1, Settings.MultiStepSteps do
 		local pos = start:Lerp(goal, i / Settings.MultiStepSteps)
 		local ray = workspace:Raycast(pos + Vector3.new(0, 5, 0), Vector3.new(0, -20, 0), rayParams)
-		if ray then pos = Vector3.new(pos.X, ray.Position.Y + 3, pos.Z) end
+		if ray then
+			pos = Vector3.new(pos.X, ray.Position.Y + 3, pos.Z)
+		end
 		hrp.CFrame = CFrame.new(pos)
 		task.wait(Settings.MultiStepDelay)
 	end
