@@ -1,4 +1,4 @@
--- Professional Egg Manager (Tabs + Adjustable Multi-Step)
+-- Egg Manager (Split View + Grounded Multi-Step)
 
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
@@ -6,10 +6,9 @@ local UserInputService = game:GetService("UserInputService")
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
-local TWEEN_DURATION = 2.8
-local MULTISTEP_DELAY = 0.22
+local TWEEN_DURATION = 5.0
+local MULTISTEP_DELAY = 0.45
 
--- Remove old UI
 if playerGui:FindFirstChild("EggTeleportUI") then
 	playerGui.EggTeleportUI:Destroy()
 end
@@ -21,7 +20,7 @@ screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 screenGui.Parent = playerGui
 
 local mainFrame = Instance.new("Frame")
-mainFrame.Size = UDim2.new(0, 300, 0, 520)
+mainFrame.Size = UDim2.new(0, 520, 0, 480)
 mainFrame.Position = UDim2.new(0, 30, 0.2, 0)
 mainFrame.BackgroundColor3 = Color3.fromRGB(16, 16, 20)
 mainFrame.BorderSizePixel = 0
@@ -40,7 +39,7 @@ mainStroke.Parent = mainFrame
 
 -- Header
 local header = Instance.new("Frame")
-header.Size = UDim2.new(1, 0, 0, 48)
+header.Size = UDim2.new(1, 0, 0, 46)
 header.BackgroundColor3 = Color3.fromRGB(24, 24, 32)
 header.BorderSizePixel = 0
 header.Parent = mainFrame
@@ -50,8 +49,8 @@ headerCorner.CornerRadius = UDim.new(0, 16)
 headerCorner.Parent = header
 
 local headerFix = Instance.new("Frame")
-headerFix.Size = UDim2.new(1, 0, 0, 16)
-headerFix.Position = UDim2.new(0, 0, 1, -16)
+headerFix.Size = UDim2.new(1, 0, 0, 14)
+headerFix.Position = UDim2.new(0, 0, 1, -14)
 headerFix.BackgroundColor3 = Color3.fromRGB(24, 24, 32)
 headerFix.BorderSizePixel = 0
 headerFix.Parent = header
@@ -88,93 +87,46 @@ UserInputService.InputChanged:Connect(function(input)
 	end
 end)
 
--- Tab Buttons
-local tabFrame = Instance.new("Frame")
-tabFrame.Size = UDim2.new(1, -24, 0, 34)
-tabFrame.Position = UDim2.new(0, 12, 0, 56)
-tabFrame.BackgroundTransparency = 1
-tabFrame.Parent = mainFrame
+-- Left Panel (Teleport)
+local leftPanel = Instance.new("ScrollingFrame")
+leftPanel.Size = UDim2.new(0.5, -18, 1, -62)
+leftPanel.Position = UDim2.new(0, 12, 0, 54)
+leftPanel.BackgroundTransparency = 1
+leftPanel.BorderSizePixel = 0
+leftPanel.ScrollBarThickness = 4
+leftPanel.Parent = mainFrame
 
-local tabTeleport = Instance.new("TextButton")
-tabTeleport.Size = UDim2.new(0.5, -4, 1, 0)
-tabTeleport.BackgroundColor3 = Color3.fromRGB(50, 90, 160)
-tabTeleport.Text = "Teleport"
-tabTeleport.TextColor3 = Color3.fromRGB(255, 255, 255)
-tabTeleport.Font = Enum.Font.GothamBold
-tabTeleport.TextSize = 14
-tabTeleport.Parent = tabFrame
+local leftList = Instance.new("UIListLayout")
+leftList.Padding = UDim.new(0, 8)
+leftList.SortOrder = Enum.SortOrder.LayoutOrder
+leftList.Parent = leftPanel
 
-local tabEggs = Instance.new("TextButton")
-tabEggs.Size = UDim2.new(0.5, -4, 1, 0)
-tabEggs.Position = UDim2.new(0.5, 4, 0, 0)
-tabEggs.BackgroundColor3 = Color3.fromRGB(40, 40, 55)
-tabEggs.Text = "Eggs"
-tabEggs.TextColor3 = Color3.fromRGB(200, 200, 220)
-tabEggs.Font = Enum.Font.GothamBold
-tabEggs.TextSize = 14
-tabEggs.Parent = tabFrame
+-- Right Panel (Eggs)
+local rightPanel = Instance.new("ScrollingFrame")
+rightPanel.Size = UDim2.new(0.5, -18, 1, -62)
+rightPanel.Position = UDim2.new(0.5, 6, 0, 54)
+rightPanel.BackgroundTransparency = 1
+rightPanel.BorderSizePixel = 0
+rightPanel.ScrollBarThickness = 4
+rightPanel.Parent = mainFrame
 
-local function corner(btn)
-	local c = Instance.new("UICorner")
-	c.CornerRadius = UDim.new(0, 8)
-	c.Parent = btn
-end
-corner(tabTeleport)
-corner(tabEggs)
+local rightList = Instance.new("UIListLayout")
+rightList.Padding = UDim.new(0, 8)
+rightList.SortOrder = Enum.SortOrder.LayoutOrder
+rightList.Parent = rightPanel
 
--- Pages
-local teleportPage = Instance.new("ScrollingFrame")
-teleportPage.Size = UDim2.new(1, -24, 1, -108)
-teleportPage.Position = UDim2.new(0, 12, 0, 98)
-teleportPage.BackgroundTransparency = 1
-teleportPage.BorderSizePixel = 0
-teleportPage.ScrollBarThickness = 4
-teleportPage.Visible = true
-teleportPage.Parent = mainFrame
+-- Divider line
+local divider = Instance.new("Frame")
+divider.Size = UDim2.new(0, 1, 1, -70)
+divider.Position = UDim2.new(0.5, -0.5, 0, 54)
+divider.BackgroundColor3 = Color3.fromRGB(50, 50, 70)
+divider.BorderSizePixel = 0
+divider.Parent = mainFrame
 
-local eggsPage = Instance.new("ScrollingFrame")
-eggsPage.Size = UDim2.new(1, -24, 1, -108)
-eggsPage.Position = UDim2.new(0, 12, 0, 98)
-eggsPage.BackgroundTransparency = 1
-eggsPage.BorderSizePixel = 0
-eggsPage.ScrollBarThickness = 4
-eggsPage.Visible = false
-eggsPage.Parent = mainFrame
-
-local function addList(parent)
-	local l = Instance.new("UIListLayout")
-	l.Padding = UDim.new(0, 9)
-	l.SortOrder = Enum.SortOrder.LayoutOrder
-	l.Parent = parent
-	return l
-end
-
-local teleportList = addList(teleportPage)
-local eggsList = addList(eggsPage)
-
--- Tab switching
-local function switchTab(isTeleport)
-	teleportPage.Visible = isTeleport
-	eggsPage.Visible = not isTeleport
-
-	tabTeleport.BackgroundColor3 = isTeleport and Color3.fromRGB(50, 90, 160) or Color3.fromRGB(40, 40, 55)
-	tabEggs.BackgroundColor3 = isTeleport and Color3.fromRGB(40, 40, 55) or Color3.fromRGB(50, 90, 160)
-
-	tabTeleport.TextColor3 = isTeleport and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(200, 200, 220)
-	tabEggs.TextColor3 = isTeleport and Color3.fromRGB(200, 200, 220) or Color3.fromRGB(255, 255, 255)
-end
-
-tabTeleport.MouseButton1Click:Connect(function()
-	switchTab(true)
-end)
-tabEggs.MouseButton1Click:Connect(function()
-	switchTab(false)
-end)
-
--- ====================== SLIDERS ======================
-local function createSlider(parent, titleText, minVal, maxVal, defaultVal, callback)
+-- ====================== CONTROLS ======================
+local function createAdvancedControl(parent, labelText, minVal, maxVal, defaultVal, callback)
 	local frame = Instance.new("Frame")
-	frame.Size = UDim2.new(1, 0, 0, 58)
+	frame.Size = UDim2.new(1, 0, 0, 72)
 	frame.BackgroundColor3 = Color3.fromRGB(28, 28, 36)
 	frame.BorderSizePixel = 0
 	frame.Parent = parent
@@ -184,19 +136,34 @@ local function createSlider(parent, titleText, minVal, maxVal, defaultVal, callb
 	c.Parent = frame
 
 	local title = Instance.new("TextLabel")
-	title.Size = UDim2.new(1, -16, 0, 20)
-	title.Position = UDim2.new(0, 10, 0, 6)
+	title.Size = UDim2.new(1, -80, 0, 18)
+	title.Position = UDim2.new(0, 10, 0, 5)
 	title.BackgroundTransparency = 1
-	title.Text = titleText
+	title.Text = labelText
 	title.TextColor3 = Color3.fromRGB(200, 200, 220)
 	title.Font = Enum.Font.GothamMedium
-	title.TextSize = 13
+	title.TextSize = 12
 	title.TextXAlignment = Enum.TextXAlignment.Left
 	title.Parent = frame
 
+	local textBox = Instance.new("TextBox")
+	textBox.Size = UDim2.new(0, 64, 0, 20)
+	textBox.Position = UDim2.new(1, -72, 0, 4)
+	textBox.BackgroundColor3 = Color3.fromRGB(40, 40, 55)
+	textBox.Text = tostring(defaultVal)
+	textBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+	textBox.Font = Enum.Font.Gotham
+	textBox.TextSize = 12
+	textBox.ClearTextOnFocus = false
+	textBox.Parent = frame
+
+	local tbC = Instance.new("UICorner")
+	tbC.CornerRadius = UDim.new(0, 6)
+	tbC.Parent = textBox
+
 	local bg = Instance.new("Frame")
-	bg.Size = UDim2.new(1, -20, 0, 8)
-	bg.Position = UDim2.new(0, 10, 0, 34)
+	bg.Size = UDim2.new(1, -20, 0, 7)
+	bg.Position = UDim2.new(0, 10, 0, 40)
 	bg.BackgroundColor3 = Color3.fromRGB(45, 45, 60)
 	bg.BorderSizePixel = 0
 	bg.Parent = frame
@@ -216,7 +183,7 @@ local function createSlider(parent, titleText, minVal, maxVal, defaultVal, callb
 	fillC.Parent = fill
 
 	local btn = Instance.new("TextButton")
-	btn.Size = UDim2.new(0, 18, 0, 18)
+	btn.Size = UDim2.new(0, 16, 0, 16)
 	btn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 	btn.Text = ""
 	btn.AutoButtonColor = false
@@ -228,15 +195,14 @@ local function createSlider(parent, titleText, minVal, maxVal, defaultVal, callb
 
 	local sliding = false
 
-	local function update(value)
-		value = math.clamp(value, 0, 1)
-		fill.Size = UDim2.new(value, 0, 1, 0)
-		btn.Position = UDim2.new(value, -9, 0.5, -9)
-
-		local result = minVal + (maxVal - minVal) * value
-		result = math.floor(result * 100) / 100
-		title.Text = titleText:gsub("%d+%.?%d*", tostring(result))
-		callback(result)
+	local function setValue(val)
+		val = math.clamp(val, minVal, maxVal)
+		val = math.floor(val * 100) / 100
+		local alpha = (val - minVal) / (maxVal - minVal)
+		fill.Size = UDim2.new(alpha, 0, 1, 0)
+		btn.Position = UDim2.new(alpha, -8, 0.5, -8)
+		textBox.Text = tostring(val)
+		callback(val)
 	end
 
 	btn.InputBegan:Connect(function(input)
@@ -254,54 +220,40 @@ local function createSlider(parent, titleText, minVal, maxVal, defaultVal, callb
 	UserInputService.InputChanged:Connect(function(input)
 		if sliding and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
 			local rel = input.Position.X - bg.AbsolutePosition.X
-			update(rel / bg.AbsoluteSize.X)
+			local alpha = math.clamp(rel / bg.AbsoluteSize.X, 0, 1)
+			setValue(minVal + (maxVal - minVal) * alpha)
 		end
 	end)
 
-	-- Set default
-	local defaultAlpha = (defaultVal - minVal) / (maxVal - minVal)
-	update(defaultAlpha)
+	textBox.FocusLost:Connect(function()
+		local num = tonumber(textBox.Text)
+		if num then setValue(num) else textBox.Text = tostring(defaultVal) end
+	end)
 
-	return frame
+	setValue(defaultVal)
 end
 
-createSlider(teleportPage, "Tween Speed: 2.8s", 1.0, 6.0, 2.8, function(val)
-	TWEEN_DURATION = val
-end)
+createAdvancedControl(leftPanel, "Tween Speed (s)", 2.0, 12.0, 5.0, function(v) TWEEN_DURATION = v end)
+createAdvancedControl(leftPanel, "Multi-Step Delay (s)", 0.20, 1.20, 0.45, function(v) MULTISTEP_DELAY = v end)
 
-createSlider(teleportPage, "Multi-Step Delay: 0.22s", 0.08, 0.50, 0.22, function(val)
-	MULTISTEP_DELAY = val
-end)
-
--- ====================== BUTTONS ======================
 local function createButton(parent, text, bgColor, callback)
 	local btn = Instance.new("TextButton")
-	btn.Size = UDim2.new(1, 0, 0, 38)
+	btn.Size = UDim2.new(1, 0, 0, 36)
 	btn.BackgroundColor3 = bgColor
 	btn.Text = text
 	btn.TextColor3 = Color3.fromRGB(255, 255, 255)
 	btn.Font = Enum.Font.GothamMedium
-	btn.TextSize = 14
+	btn.TextSize = 13
 	btn.AutoButtonColor = false
 	btn.Parent = parent
 
 	local c = Instance.new("UICorner")
-	c.CornerRadius = UDim.new(0, 10)
+	c.CornerRadius = UDim.new(0, 9)
 	c.Parent = btn
-
-	local s = Instance.new("UIStroke")
-	s.Color = Color3.fromRGB(255, 255, 255)
-	s.Thickness = 1
-	s.Transparency = 0.92
-	s.Parent = btn
 
 	btn.MouseEnter:Connect(function()
 		TweenService:Create(btn, TweenInfo.new(0.15), {
-			BackgroundColor3 = Color3.new(
-				math.min(bgColor.R + 0.08, 1),
-				math.min(bgColor.G + 0.08, 1),
-				math.min(bgColor.B + 0.08, 1)
-			)
+			BackgroundColor3 = Color3.new(math.min(bgColor.R+0.08,1), math.min(bgColor.G+0.08,1), math.min(bgColor.B+0.08,1))
 		}):Play()
 	end)
 	btn.MouseLeave:Connect(function()
@@ -313,9 +265,7 @@ local function createButton(parent, text, bgColor, callback)
 end
 
 local function getBase()
-	return workspace:FindFirstChild("Plots")
-		and workspace.Plots:FindFirstChild("Plot")
-		and workspace.Plots.Plot:FindFirstChild("Baseplate")
+	return workspace:FindFirstChild("Plots") and workspace.Plots:FindFirstChild("Plot") and workspace.Plots.Plot:FindFirstChild("Baseplate")
 end
 
 local function teleportTo(target)
@@ -337,9 +287,9 @@ local function tweenToBase()
 	TweenService:Create(hrp, TweenInfo.new(TWEEN_DURATION, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
 		CFrame = base:GetPivot() * CFrame.new(0, 5, 0)
 	}):Play()
-	print("Tweening • " .. TWEEN_DURATION .. "s")
 end
 
+-- Grounded Multi-Step
 local function multiStepToBase()
 	local base = getBase()
 	local char = player.Character
@@ -348,41 +298,50 @@ local function multiStepToBase()
 	if not hrp then return end
 
 	local start = hrp.Position
-	local goal = (base:GetPivot() * CFrame.new(0, 5, 0)).Position
-	local steps = 12
+	local goal = (base:GetPivot() * CFrame.new(0, 3, 0)).Position
+	local steps = 14
+
+	local rayParams = RaycastParams.new()
+	rayParams.FilterType = Enum.RaycastFilterType.Exclude
+	rayParams.FilterDescendantsInstances = {char}
 
 	for i = 1, steps do
-		hrp.CFrame = CFrame.new(start:Lerp(goal, i / steps))
+		local targetPos = start:Lerp(goal, i / steps)
+
+		-- Raycast down to stay on ground
+		local ray = workspace:Raycast(targetPos + Vector3.new(0, 5, 0), Vector3.new(0, -20, 0), rayParams)
+		if ray then
+			targetPos = Vector3.new(targetPos.X, ray.Position.Y + 3, targetPos.Z)
+		end
+
+		hrp.CFrame = CFrame.new(targetPos)
 		task.wait(MULTISTEP_DELAY)
 	end
-	print("Multi-step done • delay " .. MULTISTEP_DELAY .. "s")
+	print("Grounded multi-step finished")
 end
 
-createButton(teleportPage, "Instant Return to Base", Color3.fromRGB(32, 95, 65), function()
+createButton(leftPanel, "Instant Return to Base", Color3.fromRGB(32, 95, 65), function()
 	local base = getBase()
-	if base then teleportTo(base) else warn("Base not found") end
+	if base then teleportTo(base) end
 end)
 
-createButton(teleportPage, "Smooth Tween to Base", Color3.fromRGB(35, 80, 140), function()
+createButton(leftPanel, "Smooth Tween to Base", Color3.fromRGB(35, 80, 140), function()
 	tweenToBase()
 end)
 
-createButton(teleportPage, "Multi-Step Return to Base", Color3.fromRGB(85, 55, 130), function()
+createButton(leftPanel, "Multi-Step (Grounded)", Color3.fromRGB(85, 55, 130), function()
 	multiStepToBase()
 end)
 
-createButton(eggsPage, "Refresh Unique Eggs", Color3.fromRGB(45, 45, 70), function()
-	for _, child in ipairs(eggsPage:GetChildren()) do
+createButton(rightPanel, "Refresh Unique Eggs", Color3.fromRGB(45, 45, 70), function()
+	for _, child in ipairs(rightPanel:GetChildren()) do
 		if child:IsA("TextButton") and child.Text:find("Egg •") then
 			child:Destroy()
 		end
 	end
 
 	local rendered = workspace:FindFirstChild("RenderedEggs")
-	if not rendered then
-		warn("RenderedEggs not found")
-		return
-	end
+	if not rendered then return end
 
 	local unique = {}
 	local count = 0
@@ -391,19 +350,17 @@ createButton(eggsPage, "Refresh Unique Eggs", Color3.fromRGB(45, 45, 70), functi
 		if not unique[egg.Name] then
 			unique[egg.Name] = true
 			count += 1
-
-			createButton(eggsPage, "Egg • " .. egg.Name, Color3.fromRGB(38, 38, 52), function()
+			createButton(rightPanel, "Egg • " .. egg.Name, Color3.fromRGB(38, 38, 52), function()
 				teleportTo(egg)
-				print("→ " .. egg.Name)
 			end)
 		end
 	end
 
-	eggsPage.CanvasSize = UDim2.new(0, 0, 0, eggsList.AbsoluteContentSize.Y + 12)
+	rightPanel.CanvasSize = UDim2.new(0, 0, 0, rightList.AbsoluteContentSize.Y + 10)
 	print("Loaded " .. count .. " unique eggs")
 end)
 
--- ====================== ESP ======================
+-- ESP
 local ESPFolder = Instance.new("Folder")
 ESPFolder.Name = "EggSizeESP"
 ESPFolder.Parent = game:GetService("CoreGui")
@@ -420,7 +377,6 @@ end
 local function createESP(egg)
 	local id = egg.Name .. "_" .. egg:GetDebugId()
 	if ESPFolder:FindFirstChild(id) then return end
-
 	local part = egg:FindFirstChild("EggBase") or egg.PrimaryPart or egg:FindFirstChildWhichIsA("BasePart")
 	if not part then return end
 
@@ -449,22 +405,15 @@ task.spawn(function()
 	while task.wait(0.75) do
 		local folder = workspace:FindFirstChild("RenderedEggs")
 		if not folder then continue end
-
 		for _, esp in ipairs(ESPFolder:GetChildren()) do
 			local exists = false
 			for _, egg in ipairs(folder:GetChildren()) do
-				if esp.Name:find(egg:GetDebugId()) then
-					exists = true
-					break
-				end
+				if esp.Name:find(egg:GetDebugId()) then exists = true break end
 			end
 			if not exists then esp:Destroy() end
 		end
-
-		for _, egg in ipairs(folder:GetChildren()) do
-			createESP(egg)
-		end
+		for _, egg in ipairs(folder:GetChildren()) do createESP(egg) end
 	end
 end)
 
-print("Tabbed Egg Manager loaded • Adjustable Tween + Multi-Step")
+print("Split UI + Grounded Multi-Step loaded")
