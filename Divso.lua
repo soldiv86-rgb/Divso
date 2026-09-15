@@ -4,6 +4,7 @@ local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local CoreGui = game:GetService("CoreGui")
+local HttpService = game:GetService("HttpService")
 
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
@@ -14,20 +15,19 @@ local playerGui = player:WaitForChild("PlayerGui")
 local SAVE_FILE = "DivineSoul_RideAPet_Settings.json"
 
 local Settings = {
-	TweenDuration = 8.0,
-	MultiStepDelay = 0.8,
+	TweenDuration = 5.0,
+	MultiStepDelay = 0.45,
 	MultiStepSteps = 14,
-	AutoRefreshInterval = 5,
+	AutoRefreshInterval = 12,
 	NotificationDuration = 2.6,
 	ESPEnabled = true,
 	AutoRefreshEnabled = false,
 }
 
--- Load saved settings
 local function loadSettings()
 	if isfile and readfile and isfile(SAVE_FILE) then
 		local success, data = pcall(function()
-			return game:GetService("HttpService"):JSONDecode(readfile(SAVE_FILE))
+			return HttpService:JSONDecode(readfile(SAVE_FILE))
 		end)
 		if success and type(data) == "table" then
 			for k, v in pairs(data) do
@@ -35,19 +35,17 @@ local function loadSettings()
 					Settings[k] = v
 				end
 			end
-			print("Settings loaded")
 		end
 	end
 end
 
--- Save settings
 local function saveSettings()
 	if writefile then
 		local success, encoded = pcall(function()
-			return game:GetService("HttpService"):JSONEncode(Settings)
+			return HttpService:JSONEncode(Settings)
 		end)
 		if success then
-			writefile(SAVE_FILE, encoded)
+			pcall(writefile, SAVE_FILE, encoded)
 		end
 	end
 end
@@ -83,7 +81,6 @@ screenGui.ResetOnSpawn = false
 screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 screenGui.Parent = playerGui
 
--- Main Window
 local main = Instance.new("Frame")
 main.Name = "Main"
 main.Size = UDim2.new(0, 620, 0, 460)
@@ -102,7 +99,7 @@ mainStroke.Color = Color3.fromRGB(45, 45, 60)
 mainStroke.Thickness = 1
 mainStroke.Parent = main
 
--- Left Sidebar
+-- Sidebar
 local sidebar = Instance.new("Frame")
 sidebar.Name = "Sidebar"
 sidebar.Size = UDim2.new(0, 160, 1, 0)
@@ -121,7 +118,6 @@ sideCover.BackgroundColor3 = Color3.fromRGB(16, 16, 22)
 sideCover.BorderSizePixel = 0
 sideCover.Parent = sidebar
 
--- Title
 local sideTitle = Instance.new("TextLabel")
 sideTitle.Size = UDim2.new(1, -20, 0, 50)
 sideTitle.Position = UDim2.new(0, 12, 0, 8)
@@ -144,7 +140,7 @@ sideSub.TextSize = 12
 sideSub.TextXAlignment = Enum.TextXAlignment.Left
 sideSub.Parent = sidebar
 
--- Content Area
+-- Content
 local content = Instance.new("Frame")
 content.Name = "Content"
 content.Size = UDim2.new(1, -170, 1, -20)
@@ -152,7 +148,6 @@ content.Position = UDim2.new(0, 165, 0, 10)
 content.BackgroundTransparency = 1
 content.Parent = main
 
--- Header bar
 local headerBar = Instance.new("Frame")
 headerBar.Size = UDim2.new(1, 0, 0, 42)
 headerBar.BackgroundColor3 = Color3.fromRGB(28, 28, 36)
@@ -174,15 +169,15 @@ headerTitle.TextSize = 15
 headerTitle.TextXAlignment = Enum.TextXAlignment.Left
 headerTitle.Parent = headerBar
 
--- Close button (DS)
+-- Close button (X)
 local closeBtn = Instance.new("TextButton")
-closeBtn.Size = UDim2.new(0, 34, 0, 28)
-closeBtn.Position = UDim2.new(1, -42, 0.5, -14)
+closeBtn.Size = UDim2.new(0, 32, 0, 28)
+closeBtn.Position = UDim2.new(1, -40, 0.5, -14)
 closeBtn.BackgroundColor3 = Color3.fromRGB(50, 30, 35)
-closeBtn.Text = "DS"
+closeBtn.Text = "×"
 closeBtn.TextColor3 = Color3.fromRGB(255, 180, 180)
 closeBtn.Font = Enum.Font.GothamBold
-closeBtn.TextSize = 13
+closeBtn.TextSize = 18
 closeBtn.AutoButtonColor = false
 closeBtn.Parent = headerBar
 
@@ -190,7 +185,7 @@ local closeCorner = Instance.new("UICorner")
 closeCorner.CornerRadius = UDim.new(0, 7)
 closeCorner.Parent = closeBtn
 
--- Open button (draggable)
+-- Open / Toggle button (DS) - always visible + draggable
 local openBtn = Instance.new("TextButton")
 openBtn.Size = UDim2.new(0, 48, 0, 48)
 openBtn.Position = UDim2.new(0, 20, 0.5, -24)
@@ -199,7 +194,7 @@ openBtn.Text = "DS"
 openBtn.TextColor3 = Color3.fromRGB(220, 220, 255)
 openBtn.Font = Enum.Font.GothamBold
 openBtn.TextSize = 14
-openBtn.Visible = false
+openBtn.Visible = true          -- Always visible
 openBtn.AutoButtonColor = false
 openBtn.Active = true
 openBtn.Parent = screenGui
@@ -242,7 +237,7 @@ notifText.TextXAlignment = Enum.TextXAlignment.Center
 notifText.Parent = notif
 
 -------------------------------------------------
--- Dragging (Main)
+-- Dragging (Main Window)
 -------------------------------------------------
 local dragging, dragStart, startPos = false, nil, nil
 
@@ -268,14 +263,17 @@ UserInputService.InputChanged:Connect(function(input)
 end)
 
 -------------------------------------------------
--- Dragging (Open Button)
+-- Open Button (always visible + draggable + toggle)
 -------------------------------------------------
 local openDragging = false
-local openDragStart, openStartPos
+local openDragStart = nil
+local openStartPos = nil
+local openMoved = false
 
 openBtn.InputBegan:Connect(function(input)
 	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
 		openDragging = true
+		openMoved = false
 		openDragStart = input.Position
 		openStartPos = openBtn.Position
 	end
@@ -284,13 +282,33 @@ end)
 openBtn.InputEnded:Connect(function(input)
 	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
 		openDragging = false
+
+		-- Only toggle if it was a click (not a drag)
+		if not openMoved then
+			isOpen = not isOpen
+			main.Visible = isOpen
+			if isOpen then
+				notify("UI opened")
+			else
+				notify("UI closed")
+				saveSettings()
+			end
+		end
 	end
 end)
 
 UserInputService.InputChanged:Connect(function(input)
 	if openDragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
 		local delta = input.Position - openDragStart
-		openBtn.Position = UDim2.new(openStartPos.X.Scale, openStartPos.X.Offset + delta.X, openStartPos.Y.Scale, openStartPos.Y.Offset + delta.Y)
+
+		if math.abs(delta.X) > 4 or math.abs(delta.Y) > 4 then
+			openMoved = true
+		end
+
+		openBtn.Position = UDim2.new(
+			openStartPos.X.Scale, openStartPos.X.Offset + delta.X,
+			openStartPos.Y.Scale, openStartPos.Y.Offset + delta.Y
+		)
 	end
 end)
 
@@ -325,7 +343,6 @@ rightList.Padding = UDim.new(0, 7)
 rightList.SortOrder = Enum.SortOrder.LayoutOrder
 rightList.Parent = rightContent
 
--- Search
 local searchBox = Instance.new("TextBox")
 searchBox.Size = UDim2.new(0.48, 0, 0, 34)
 searchBox.Position = UDim2.new(0.52, 0, 0, 50)
@@ -376,7 +393,6 @@ local function createSection(parent, title)
 	label.TextSize = 12
 	label.TextXAlignment = Enum.TextXAlignment.Left
 	label.Parent = parent
-	return label
 end
 
 local function createToggle(parent, text, default, callback)
@@ -437,8 +453,6 @@ local function createToggle(parent, text, default, callback)
 		callback(state)
 		saveSettings()
 	end)
-
-	return frame
 end
 
 local function createButton(parent, text, color, callback)
@@ -753,7 +767,7 @@ task.spawn(function()
 end)
 
 -------------------------------------------------
--- Build Controls
+-- Controls
 -------------------------------------------------
 createSection(leftContent, "MOVEMENT")
 createSlider(leftContent, "Tween Speed (s)", 2, 12, Settings.TweenDuration, function(v)
@@ -795,22 +809,13 @@ createButton(rightContent, "Refresh Eggs", Color3.fromRGB(45, 45, 70), function(
 end)
 
 -------------------------------------------------
--- Close / Open
+-- Close button (X) - only hides the main UI
 -------------------------------------------------
 closeBtn.MouseButton1Click:Connect(function()
 	main.Visible = false
-	openBtn.Visible = true
 	isOpen = false
 	saveSettings()
 	notify("UI closed")
-end)
-
-openBtn.MouseButton1Click:Connect(function()
-	if not openDragging then
-		main.Visible = true
-		openBtn.Visible = false
-		isOpen = true
-	end
 end)
 
 closeBtn.MouseEnter:Connect(function()
@@ -831,7 +836,6 @@ task.spawn(function()
 	end
 end)
 
--- Save on leave
 player.AncestryChanged:Connect(function()
 	if not player.Parent then
 		saveSettings()
@@ -840,4 +844,4 @@ end)
 
 refreshEggs()
 notify("Divine Soul loaded")
-print("Divine Soul - Ride a Pet loaded (with settings save)")
+print("Divine Soul - Ride a Pet loaded")
