@@ -74,13 +74,13 @@ local RarityPriority = {
 	Epic = 3, Rare = 2, Common = 1
 }
 local RarityColors = {
-	Ethereal  = Color3.fromRGB(200, 90, 255),
-	Divine    = Color3.fromRGB(255, 215, 60),
-	Mythic    = Color3.fromRGB(190, 60, 255),
-	Legendary = Color3.fromRGB(255, 155, 30),
-	Epic      = Color3.fromRGB(170, 70, 255),
-	Rare      = Color3.fromRGB(60, 140, 255),
-	Common    = Color3.fromRGB(160, 160, 170),
+	Ethereal  = Color3.fromRGB(175, 145, 255),  -- 1T   (soft purple/lavender)
+	Divine    = Color3.fromRGB(155, 175,  55),  -- 300M (olive / yellowish-green)
+	Mythic    = Color3.fromRGB(165,  70, 210),  -- 150K (strong purple)
+	Legendary = Color3.fromRGB(255, 160,  40),  -- 10K  (warm orange-gold)
+	Epic      = Color3.fromRGB(130,  85, 210),  -- 3K   (deeper purple)
+	Rare      = Color3.fromRGB( 70, 150, 230),  -- 200  (clear blue)
+	Common    = Color3.fromRGB(115,  75,  45),  -- 1    (brown)
 }
 local RarityEggs = {
 	Ethereal = { "Cherub Egg" },
