@@ -1,4 +1,4 @@
--- Divine Soul - Ride a Pet (Clean Redesign)
+-- Divine Soul - Ride a Pet (Sidebar Layout)
 
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
@@ -54,7 +54,7 @@ end
 loadSettings()
 
 -------------------------------------------------
--- RARITY DATA (edit this)
+-- RARITY DATA
 -------------------------------------------------
 local Rarities = {"Ethereal", "Divine", "Mythic", "Legendary", "Epic", "Rare", "Common"}
 
@@ -68,7 +68,6 @@ local RarityColors = {
 	Common    = Color3.fromRGB(150, 150, 160),
 }
 
--- Put egg names here
 local RarityEggs = {
 	Ethereal = { "Cherub Egg" },
 	Divine = {"Blackhole Egg", "Galaxy Egg", "Aurora Egg" },
@@ -112,9 +111,9 @@ screenGui.Parent = playerGui
 
 -- Main Window
 local main = Instance.new("Frame")
-main.Size = UDim2.new(0, 720, 0, 480)
-main.Position = UDim2.new(0.5, -360, 0.5, -240)
-main.BackgroundColor3 = Color3.fromRGB(20, 20, 26)
+main.Size = UDim2.new(0, 780, 0, 500)
+main.Position = UDim2.new(0.5, -390, 0.5, -250)
+main.BackgroundColor3 = Color3.fromRGB(18, 18, 24)
 main.BorderSizePixel = 0
 main.Active = true
 main.Parent = screenGui
@@ -124,175 +123,159 @@ mainCorner.CornerRadius = UDim.new(0, 12)
 mainCorner.Parent = main
 
 local mainStroke = Instance.new("UIStroke")
-mainStroke.Color = Color3.fromRGB(50, 50, 70)
+mainStroke.Color = Color3.fromRGB(45, 45, 65)
 mainStroke.Thickness = 1
 mainStroke.Parent = main
 
--- Header
-local header = Instance.new("Frame")
-header.Size = UDim2.new(1, 0, 0, 52)
-header.BackgroundColor3 = Color3.fromRGB(26, 26, 34)
-header.BorderSizePixel = 0
-header.Parent = main
+-------------------------------------------------
+-- LEFT SIDEBAR (like BigFroot)
+-------------------------------------------------
+local sidebar = Instance.new("Frame")
+sidebar.Size = UDim2.new(0, 170, 1, 0)
+sidebar.BackgroundColor3 = Color3.fromRGB(14, 14, 20)
+sidebar.BorderSizePixel = 0
+sidebar.Parent = main
+
+local sideCorner = Instance.new("UICorner")
+sideCorner.CornerRadius = UDim.new(0, 12)
+sideCorner.Parent = sidebar
+
+local sideCover = Instance.new("Frame")
+sideCover.Size = UDim2.new(0, 20, 1, 0)
+sideCover.Position = UDim2.new(1, -20, 0, 0)
+sideCover.BackgroundColor3 = Color3.fromRGB(14, 14, 20)
+sideCover.BorderSizePixel = 0
+sideCover.Parent = sidebar
+
+-- Title
+local sideTitle = Instance.new("TextLabel")
+sideTitle.Size = UDim2.new(1, -20, 0, 28)
+sideTitle.Position = UDim2.new(0, 14, 0, 14)
+sideTitle.BackgroundTransparency = 1
+sideTitle.Text = "Divine Soul"
+sideTitle.TextColor3 = Color3.fromRGB(245, 245, 255)
+sideTitle.Font = Enum.Font.GothamBold
+sideTitle.TextSize = 17
+sideTitle.TextXAlignment = Enum.TextXAlignment.Left
+sideTitle.Parent = sidebar
+
+local sideSub = Instance.new("TextLabel")
+sideSub.Size = UDim2.new(1, -20, 0, 18)
+sideSub.Position = UDim2.new(0, 14, 0, 40)
+sideSub.BackgroundTransparency = 1
+sideSub.Text = "Ride a Pet"
+sideSub.TextColor3 = Color3.fromRGB(130, 130, 160)
+sideSub.Font = Enum.Font.Gotham
+sideSub.TextSize = 12
+sideSub.TextXAlignment = Enum.TextXAlignment.Left
+sideSub.Parent = sidebar
+
+-- Sidebar Tabs
+local tabButtons = {}
+
+local function createSideTab(name, y)
+	local btn = Instance.new("TextButton")
+	btn.Size = UDim2.new(1, -20, 0, 36)
+	btn.Position = UDim2.new(0, 10, 0, y)
+	btn.BackgroundColor3 = Color3.fromRGB(14, 14, 20)
+	btn.Text = "  " .. name
+	btn.TextColor3 = Color3.fromRGB(200, 200, 220)
+	btn.Font = Enum.Font.Gotham
+	btn.TextSize = 14
+	btn.TextXAlignment = Enum.TextXAlignment.Left
+	btn.AutoButtonColor = false
+	btn.Parent = sidebar
+
+	local c = Instance.new("UICorner")
+	c.CornerRadius = UDim.new(0, 8)
+	c.Parent = btn
+
+	tabButtons[name] = btn
+	return btn
+end
+
+local tabMain = createSideTab("Main", 70)
+local tabHop = createSideTab("Server Hop", 112)
+
+-------------------------------------------------
+-- RIGHT CONTENT AREA
+-------------------------------------------------
+local content = Instance.new("Frame")
+content.Size = UDim2.new(1, -190, 1, -20)
+content.Position = UDim2.new(0, 180, 0, 10)
+content.BackgroundTransparency = 1
+content.Parent = main
+
+-- Header bar inside content
+local headerBar = Instance.new("Frame")
+headerBar.Size = UDim2.new(1, 0, 0, 40)
+headerBar.BackgroundColor3 = Color3.fromRGB(26, 26, 34)
+headerBar.BorderSizePixel = 0
+headerBar.Parent = content
 
 local headerCorner = Instance.new("UICorner")
-headerCorner.CornerRadius = UDim.new(0, 12)
-headerCorner.Parent = header
+headerCorner.CornerRadius = UDim.new(0, 9)
+headerCorner.Parent = headerBar
 
-local headerCover = Instance.new("Frame")
-headerCover.Size = UDim2.new(1, 0, 0, 16)
-headerCover.Position = UDim2.new(0, 0, 1, -16)
-headerCover.BackgroundColor3 = Color3.fromRGB(26, 26, 34)
-headerCover.BorderSizePixel = 0
-headerCover.Parent = header
+local headerTitle = Instance.new("TextLabel")
+headerTitle.Size = UDim2.new(1, -50, 1, 0)
+headerTitle.Position = UDim2.new(0, 14, 0, 0)
+headerTitle.BackgroundTransparency = 1
+headerTitle.Text = "Controls & Eggs"
+headerTitle.TextColor3 = Color3.fromRGB(230, 230, 255)
+headerTitle.Font = Enum.Font.GothamMedium
+headerTitle.TextSize = 15
+headerTitle.TextXAlignment = Enum.TextXAlignment.Left
+headerTitle.Parent = headerBar
 
-local title = Instance.new("TextLabel")
-title.Size = UDim2.new(0, 180, 0, 24)
-title.Position = UDim2.new(0, 16, 0, 6)
-title.BackgroundTransparency = 1
-title.Text = "Divine Soul"
-title.TextColor3 = Color3.fromRGB(240, 240, 255)
-title.Font = Enum.Font.GothamBold
-title.TextSize = 17
-title.TextXAlignment = Enum.TextXAlignment.Left
-title.Parent = header
-
-local subtitle = Instance.new("TextLabel")
-subtitle.Size = UDim2.new(0, 120, 0, 16)
-subtitle.Position = UDim2.new(0, 16, 0, 28)
-subtitle.BackgroundTransparency = 1
-subtitle.Text = "Ride a Pet"
-subtitle.TextColor3 = Color3.fromRGB(140, 140, 170)
-subtitle.Font = Enum.Font.Gotham
-subtitle.TextSize = 12
-subtitle.TextXAlignment = Enum.TextXAlignment.Left
-subtitle.Parent = header
-
--- Tabs (under title)
-local tabMain = Instance.new("TextButton")
-tabMain.Size = UDim2.new(0, 90, 0, 26)
-tabMain.Position = UDim2.new(0, 200, 0, 14)
-tabMain.BackgroundColor3 = Color3.fromRGB(55, 100, 180)
-tabMain.Text = "Main"
-tabMain.TextColor3 = Color3.fromRGB(255, 255, 255)
-tabMain.Font = Enum.Font.GothamMedium
-tabMain.TextSize = 13
-tabMain.AutoButtonColor = false
-tabMain.Parent = header
-
-local tabMainCorner = Instance.new("UICorner")
-tabMainCorner.CornerRadius = UDim.new(0, 7)
-tabMainCorner.Parent = tabMain
-
-local tabHop = Instance.new("TextButton")
-tabHop.Size = UDim2.new(0, 100, 0, 26)
-tabHop.Position = UDim2.new(0, 300, 0, 14)
-tabHop.BackgroundColor3 = Color3.fromRGB(40, 40, 55)
-tabHop.Text = "Server Hop"
-tabHop.TextColor3 = Color3.fromRGB(200, 200, 220)
-tabHop.Font = Enum.Font.GothamMedium
-tabHop.TextSize = 13
-tabHop.AutoButtonColor = false
-tabHop.Parent = header
-
-local tabHopCorner = Instance.new("UICorner")
-tabHopCorner.CornerRadius = UDim.new(0, 7)
-tabHopCorner.Parent = tabHop
-
--- Close
+-- Close button
 local closeBtn = Instance.new("TextButton")
 closeBtn.Size = UDim2.new(0, 30, 0, 26)
-closeBtn.Position = UDim2.new(1, -40, 0, 13)
+closeBtn.Position = UDim2.new(1, -38, 0.5, -13)
 closeBtn.BackgroundColor3 = Color3.fromRGB(55, 30, 35)
 closeBtn.Text = "×"
 closeBtn.TextColor3 = Color3.fromRGB(255, 180, 180)
 closeBtn.Font = Enum.Font.GothamBold
 closeBtn.TextSize = 17
 closeBtn.AutoButtonColor = false
-closeBtn.Parent = header
+closeBtn.Parent = headerBar
 
 local closeCorner = Instance.new("UICorner")
 closeCorner.CornerRadius = UDim.new(0, 7)
 closeCorner.Parent = closeBtn
 
--- Floating DS button
-local openBtn = Instance.new("TextButton")
-openBtn.Size = UDim2.new(0, 46, 0, 46)
-openBtn.Position = UDim2.new(0, 30, 0, 100)
-openBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 45)
-openBtn.Text = "DS"
-openBtn.TextColor3 = Color3.fromRGB(220, 220, 255)
-openBtn.Font = Enum.Font.GothamBold
-openBtn.TextSize = 14
-openBtn.Visible = true
-openBtn.AutoButtonColor = false
-openBtn.Active = true
-openBtn.Parent = screenGui
-
-local openCorner = Instance.new("UICorner")
-openCorner.CornerRadius = UDim.new(0, 11)
-openCorner.Parent = openBtn
-
-local openStroke = Instance.new("UIStroke")
-openStroke.Color = Color3.fromRGB(70, 70, 110)
-openStroke.Thickness = 1.2
-openStroke.Parent = openBtn
-
--- Notification
-local notif = Instance.new("Frame")
-notif.Size = UDim2.new(0, 250, 0, 32)
-notif.Position = UDim2.new(0.5, -125, 0, 16)
-notif.BackgroundColor3 = Color3.fromRGB(30, 30, 42)
-notif.BorderSizePixel = 0
-notif.Visible = false
-notif.Parent = screenGui
-
-local notifCorner = Instance.new("UICorner")
-notifCorner.CornerRadius = UDim.new(0, 8)
-notifCorner.Parent = notif
-
-local notifText = Instance.new("TextLabel")
-notifText.Size = UDim2.new(1, -10, 1, 0)
-notifText.Position = UDim2.new(0, 5, 0, 0)
-notifText.BackgroundTransparency = 1
-notifText.TextColor3 = Color3.fromRGB(230, 230, 255)
-notifText.Font = Enum.Font.GothamMedium
-notifText.TextSize = 13
-notifText.TextXAlignment = Enum.TextXAlignment.Center
-notifText.Parent = notif
-
 -------------------------------------------------
--- CONTENT
+-- MAIN TAB CONTENT
 -------------------------------------------------
-local content = Instance.new("Frame")
-content.Size = UDim2.new(1, -20, 1, -68)
-content.Position = UDim2.new(0, 10, 0, 58)
-content.BackgroundTransparency = 1
-content.Parent = main
+local mainContent = Instance.new("Frame")
+mainContent.Size = UDim2.new(1, 0, 1, -50)
+mainContent.Position = UDim2.new(0, 0, 0, 48)
+mainContent.BackgroundTransparency = 1
+mainContent.Parent = content
 
--- Left Panel (Controls)
+-- Left controls
 local left = Instance.new("ScrollingFrame")
-left.Size = UDim2.new(0.36, 0, 1, 0)
+left.Size = UDim2.new(0.42, 0, 1, 0)
 left.BackgroundTransparency = 1
 left.BorderSizePixel = 0
 left.ScrollBarThickness = 3
 left.AutomaticCanvasSize = Enum.AutomaticSize.Y
-left.Parent = content
+left.Parent = mainContent
 
 local leftList = Instance.new("UIListLayout")
 leftList.Padding = UDim.new(0, 8)
 leftList.Parent = left
 
--- Right Panel (Eggs + Rarity)
+-- Right side (Rarity + Eggs)
 local right = Instance.new("Frame")
-right.Size = UDim2.new(0.62, 0, 1, 0)
-right.Position = UDim2.new(0.38, 0, 0, 0)
+right.Size = UDim2.new(0.56, 0, 1, 0)
+right.Position = UDim2.new(0.44, 0, 0, 0)
 right.BackgroundTransparency = 1
-right.Parent = content
+right.Parent = mainContent
 
--- Rarity Section
+-- Rarity
 local rarityFrame = Instance.new("Frame")
-rarityFrame.Size = UDim2.new(1, 0, 0, 160)
+rarityFrame.Size = UDim2.new(1, 0, 0, 155)
 rarityFrame.BackgroundColor3 = Color3.fromRGB(26, 26, 34)
 rarityFrame.BorderSizePixel = 0
 rarityFrame.Parent = right
@@ -325,10 +308,10 @@ local rarityList = Instance.new("UIListLayout")
 rarityList.Padding = UDim.new(0, 4)
 rarityList.Parent = rarityScroll
 
--- Eggs Section
+-- Eggs
 local eggSearch = Instance.new("TextBox")
 eggSearch.Size = UDim2.new(1, 0, 0, 32)
-eggSearch.Position = UDim2.new(0, 0, 0, 170)
+eggSearch.Position = UDim2.new(0, 0, 0, 165)
 eggSearch.BackgroundColor3 = Color3.fromRGB(32, 32, 42)
 eggSearch.PlaceholderText = "Search eggs..."
 eggSearch.Text = ""
@@ -344,8 +327,8 @@ esCorner.CornerRadius = UDim.new(0, 8)
 esCorner.Parent = eggSearch
 
 local eggScroll = Instance.new("ScrollingFrame")
-eggScroll.Size = UDim2.new(1, 0, 1, -212)
-eggScroll.Position = UDim2.new(0, 0, 0, 210)
+eggScroll.Size = UDim2.new(1, 0, 1, -207)
+eggScroll.Position = UDim2.new(0, 0, 0, 205)
 eggScroll.BackgroundTransparency = 1
 eggScroll.BorderSizePixel = 0
 eggScroll.ScrollBarThickness = 3
@@ -360,11 +343,11 @@ eggList.Parent = eggScroll
 -- HOP TAB CONTENT
 -------------------------------------------------
 local hopContent = Instance.new("Frame")
-hopContent.Size = UDim2.new(1, -20, 1, -68)
-hopContent.Position = UDim2.new(0, 10, 0, 58)
+hopContent.Size = UDim2.new(1, 0, 1, -50)
+hopContent.Position = UDim2.new(0, 0, 0, 48)
 hopContent.BackgroundTransparency = 1
 hopContent.Visible = false
-hopContent.Parent = main
+hopContent.Parent = content
 
 local hopTitle = Instance.new("TextLabel")
 hopTitle.Size = UDim2.new(1, 0, 0, 30)
@@ -384,6 +367,53 @@ hopDesc.TextColor3 = Color3.fromRGB(160, 160, 180)
 hopDesc.Font = Enum.Font.Gotham
 hopDesc.TextSize = 14
 hopDesc.Parent = hopContent
+
+-------------------------------------------------
+-- FLOATING BUTTON + NOTIFICATION
+-------------------------------------------------
+local openBtn = Instance.new("TextButton")
+openBtn.Size = UDim2.new(0, 46, 0, 46)
+openBtn.Position = UDim2.new(0, 30, 0, 100)
+openBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 45)
+openBtn.Text = "DS"
+openBtn.TextColor3 = Color3.fromRGB(220, 220, 255)
+openBtn.Font = Enum.Font.GothamBold
+openBtn.TextSize = 14
+openBtn.Visible = true
+openBtn.AutoButtonColor = false
+openBtn.Active = true
+openBtn.Parent = screenGui
+
+local openCorner = Instance.new("UICorner")
+openCorner.CornerRadius = UDim.new(0, 11)
+openCorner.Parent = openBtn
+
+local openStroke = Instance.new("UIStroke")
+openStroke.Color = Color3.fromRGB(70, 70, 110)
+openStroke.Thickness = 1.2
+openStroke.Parent = openBtn
+
+local notif = Instance.new("Frame")
+notif.Size = UDim2.new(0, 250, 0, 32)
+notif.Position = UDim2.new(0.5, -125, 0, 16)
+notif.BackgroundColor3 = Color3.fromRGB(30, 30, 42)
+notif.BorderSizePixel = 0
+notif.Visible = false
+notif.Parent = screenGui
+
+local notifCorner = Instance.new("UICorner")
+notifCorner.CornerRadius = UDim.new(0, 8)
+notifCorner.Parent = notif
+
+local notifText = Instance.new("TextLabel")
+notifText.Size = UDim2.new(1, -10, 1, 0)
+notifText.Position = UDim2.new(0, 5, 0, 0)
+notifText.BackgroundTransparency = 1
+notifText.TextColor3 = Color3.fromRGB(230, 230, 255)
+notifText.Font = Enum.Font.GothamMedium
+notifText.TextSize = 13
+notifText.TextXAlignment = Enum.TextXAlignment.Center
+notifText.Parent = notif
 
 -------------------------------------------------
 -- HELPERS
@@ -794,28 +824,37 @@ createButton(eggScroll, "Refresh Eggs", Color3.fromRGB(45, 45, 70), function()
 	refreshEggs()
 end)
 
--- Server Hop button
 createButton(hopContent, "Server Hop Now", Color3.fromRGB(90, 50, 160), function()
 	notify("Server hopping...")
 	TeleportService:Teleport(game.PlaceId, player)
 end).Position = UDim2.new(0, 0, 0, 90)
 
 -------------------------------------------------
--- TABS
+-- TAB SWITCHING
 -------------------------------------------------
 local function setTab(name)
 	currentTab = name
-	content.Visible = name == "Main"
+	mainContent.Visible = name == "Main"
 	hopContent.Visible = name == "Hop"
-	tabMain.BackgroundColor3 = name == "Main" and Color3.fromRGB(55, 100, 180) or Color3.fromRGB(40, 40, 55)
-	tabHop.BackgroundColor3 = name == "Hop" and Color3.fromRGB(55, 100, 180) or Color3.fromRGB(40, 40, 55)
+
+	for tabName, btn in pairs(tabButtons) do
+		if tabName == name then
+			btn.BackgroundColor3 = Color3.fromRGB(40, 40, 55)
+			btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+		else
+			btn.BackgroundColor3 = Color3.fromRGB(14, 14, 20)
+			btn.TextColor3 = Color3.fromRGB(180, 180, 200)
+		end
+	end
 end
 
 tabMain.MouseButton1Click:Connect(function() setTab("Main") end)
-tabHop.MouseButton1Click:Connect(function() setTab("Hop") end)
+tabHop.MouseButton1Click:Connect(function() setTab("Server Hop") end)
+
+setTab("Main")
 
 -------------------------------------------------
--- CLOSE / OPEN
+-- CLOSE / OPEN + DRAG
 -------------------------------------------------
 closeBtn.MouseButton1Click:Connect(function()
 	main.Visible = false
@@ -824,7 +863,6 @@ closeBtn.MouseButton1Click:Connect(function()
 	notify("UI closed")
 end)
 
--- Open button
 local openDragging, openDragStart, openStartPos, openMoved = false, nil, nil, false
 
 openBtn.InputBegan:Connect(function(input)
@@ -856,16 +894,15 @@ UserInputService.InputChanged:Connect(function(input)
 	end
 end)
 
--- Window drag
 local dragging, dragStart, startPos = false, nil, nil
-header.InputBegan:Connect(function(input)
+headerBar.InputBegan:Connect(function(input)
 	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
 		dragging = true
 		dragStart = input.Position
 		startPos = main.Position
 	end
 end)
-header.InputEnded:Connect(function(input)
+headerBar.InputEnded:Connect(function(input)
 	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
 		dragging = false
 	end
@@ -959,4 +996,4 @@ end)
 
 refreshEggs()
 notify("Divine Soul loaded")
-print("Divine Soul - Clean UI loaded")
+print("Divine Soul - Sidebar UI loaded")
