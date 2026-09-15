@@ -15,10 +15,10 @@ local playerGui = player:WaitForChild("PlayerGui")
 local SAVE_FILE = "DivineSoul_RideAPet_Settings.json"
 
 local Settings = {
-	TweenDuration = 5.0,
-	MultiStepDelay = 0.45,
+	TweenDuration = 8.0,
+	MultiStepDelay = 0.8,
 	MultiStepSteps = 14,
-	AutoRefreshInterval = 12,
+	AutoRefreshInterval = 3,
 	NotificationDuration = 2.6,
 	ESPEnabled = true,
 	AutoRefreshEnabled = false,
@@ -78,30 +78,14 @@ local Rarities = {
 
 -- Manually put egg names under the rarity you want
 local RarityEggs = {
-	Ethereal = {
-		-- "EggNameHere",
-	},
-	Divine = {
-		-- "EggNameHere",
-	},
-	Mythic = {
-		-- "EggNameHere",
-	},
-	Legendary = {
-		-- "EggNameHere",
-	},
-	Epic = {
-		-- "EggNameHere",
-	},
-	Rare = {
-		-- "EggNameHere",
-	},
-	Uncommon = {
-		-- "EggNameHere",
-	},
-	Common = {
-		-- "EggNameHere",
-	},
+	Ethereal = { "Cherub Egg" },
+	Divine = { "Blackhole Egg", "Galaxy Egg", "Aurora Egg" },
+	Mythic = { },
+	Legendary = { },
+	Epic = { },
+	Rare = { },
+	Uncommon = { },
+	Common = { },
 }
 
 -------------------------------------------------
