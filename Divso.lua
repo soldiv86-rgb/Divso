@@ -733,7 +733,7 @@ end
 -- PLAYER SELECTOR
 -------------------------------------------------
 local playerFrame = Instance.new("Frame")
-playerFrame.Size = UDim2.new(1, 0, 0, 120)
+playerFrame.Size = UDim2.new(1, 0, 0, 140)
 playerFrame.BackgroundColor3 = Color3.fromRGB(28, 28, 38)
 playerFrame.BorderSizePixel = 0
 playerFrame.Parent = left
@@ -743,7 +743,7 @@ playerCorner.CornerRadius = UDim.new(0, 8)
 playerCorner.Parent = playerFrame
 
 local playerTitle = Instance.new("TextLabel")
-playerTitle.Size = UDim2.new(1, -10, 0, 22)
+playerTitle.Size = UDim2.new(1, -90, 0, 22)
 playerTitle.Position = UDim2.new(0, 8, 0, 4)
 playerTitle.BackgroundTransparency = 1
 playerTitle.Text = "Select Player Base"
@@ -752,6 +752,22 @@ playerTitle.Font = Enum.Font.GothamMedium
 playerTitle.TextSize = 12
 playerTitle.TextXAlignment = Enum.TextXAlignment.Left
 playerTitle.Parent = playerFrame
+
+-- Refresh Players button
+local refreshPlayersBtn = Instance.new("TextButton")
+refreshPlayersBtn.Size = UDim2.new(0, 70, 0, 20)
+refreshPlayersBtn.Position = UDim2.new(1, -78, 0, 5)
+refreshPlayersBtn.BackgroundColor3 = Color3.fromRGB(50, 70, 120)
+refreshPlayersBtn.Text = "Refresh"
+refreshPlayersBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+refreshPlayersBtn.Font = Enum.Font.GothamMedium
+refreshPlayersBtn.TextSize = 11
+refreshPlayersBtn.AutoButtonColor = false
+refreshPlayersBtn.Parent = playerFrame
+
+local rpCorner = Instance.new("UICorner")
+rpCorner.CornerRadius = UDim.new(0, 6)
+rpCorner.Parent = refreshPlayersBtn
 
 local playerScroll = Instance.new("ScrollingFrame")
 playerScroll.Size = UDim2.new(1, -10, 1, -30)
@@ -772,7 +788,7 @@ local function refreshPlayerList()
 	end
 	playerButtons = {}
 
-	-- Add "Myself" option
+	-- Myself option
 	local selfBtn = Instance.new("TextButton")
 	selfBtn.Size = UDim2.new(1, 0, 0, 26)
 	selfBtn.BackgroundColor3 = selectedPlayer == nil and Color3.fromRGB(50, 90, 160) or Color3.fromRGB(40, 40, 55)
@@ -821,6 +837,11 @@ local function refreshPlayerList()
 		end
 	end
 end
+
+refreshPlayersBtn.MouseButton1Click:Connect(function()
+	refreshPlayerList()
+	notify("Player list refreshed")
+end)
 
 Players.PlayerAdded:Connect(refreshPlayerList)
 Players.PlayerRemoving:Connect(function(plr)
@@ -936,7 +957,7 @@ end
 updateRarityButtons()
 
 -------------------------------------------------
--- CONTROLS (Correct Order)
+-- CONTROLS
 -------------------------------------------------
 createSection(left, "MOVEMENT")
 
@@ -946,11 +967,11 @@ createButton(left, "Instant Return to Base", Color3.fromRGB(30, 100, 70), functi
 		teleportTo(base)
 		notify("Returned to your base")
 	else
-		notify("Base not found")
+		notify("Your base not found")
 	end
 end)
 
--- Player selector goes right under Instant Return
+-- Player selector
 playerFrame.Parent = left
 
 createButton(left, "Smooth Tween to Base", Color3.fromRGB(40, 85, 150), function()
